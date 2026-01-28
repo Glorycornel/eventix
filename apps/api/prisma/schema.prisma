@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+  REFUNDED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum WebhookProvider {
+  STRIPE
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  displayName  String
+  role         UserRole  @default(USER)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  events       Event[]
+  orders       Order[]
+  tickets      Ticket[]  @relation("CheckedInBy")
+  reviews      EventReview[]
+}
+
+model Event {
+  id                 String      @id @default(cuid())
+  organizerId        String
+  title              String
+  description        String
+  venue              String
+  city               String
+  startAt            DateTime
+  endAt              DateTime
+  bannerUrl          String?
+  status             EventStatus @default(DRAFT)
+  submittedAt        DateTime?
+  reviewedAt         DateTime?
+  reviewedByUserId   String?
+  rejectionReason    String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  organizer           User        @relation(fields: [organizerId], references: [id])
+  ticketTypes         TicketType[]
+  orders              Order[]
+  reviews             EventReview[]
+}
+
+model TicketType {
+  id        String   @id @default(cuid())
+  eventId   String
+  name      String
+  price     Int
+  currency  String
+  capacity  Int
+  soldCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event     Event    @relation(fields: [eventId], references: [id])
+  orderItems OrderItem[]
+  tickets   Ticket[]
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  eventId         String
+  status          OrderStatus @default(PENDING)
+  totalAmount     Int
+  currency        String
+  stripeSessionId String?     @unique
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id])
+  event      Event      @relation(fields: [eventId], references: [id])
+  items      OrderItem[]
+  tickets    Ticket[]
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  ticketTypeId String
+  unitPrice    Int
+  quantity     Int
+
+  order      Order      @relation(fields: [orderId], references: [id])
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+}
+
+model Ticket {
+  id                String   @id @default(cuid())
+  orderId           String
+  ticketTypeId      String
+  token             String   @unique
+  checkedInAt       DateTime?
+  checkedInByUserId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  order        Order      @relation(fields: [orderId], references: [id])
+  ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
+  checkedInBy  User?      @relation("CheckedInBy", fields: [checkedInByUserId], references: [id])
+}
+
+model WebhookEvent {
+  id          String          @id @default(cuid())
+  provider    WebhookProvider
+  eventId     String          @unique
+  processedAt DateTime        @default(now())
+}
+
+model EventReview {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event     Event    @relation(fields: [eventId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+}
