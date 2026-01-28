@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { API_BASE } from '../../../../../lib/api';
 import { TokenField } from '../../../../../components/TokenField';
 
@@ -23,7 +23,7 @@ export default function TicketTypesPage({
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>([]);
   const [status, setStatus] = useState('');
 
-  const loadTicketTypes = () => {
+  const loadTicketTypes = useCallback(() => {
     if (!token) {
       setTicketTypes([]);
       return;
@@ -38,11 +38,11 @@ export default function TicketTypesPage({
         setStatus('');
       })
       .catch(() => setStatus('Unable to load ticket types.'));
-  };
+  }, [params.id, token]);
 
   useEffect(() => {
     loadTicketTypes();
-  }, [token]);
+  }, [loadTicketTypes]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

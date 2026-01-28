@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { API_BASE } from '../lib/api';
 import { TokenField } from './TokenField';
 
@@ -16,33 +16,36 @@ export function EventOwnerPanel({ eventId }: { eventId: string }) {
   const [ownerEvent, setOwnerEvent] = useState<OwnerEvent | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
 
-  const fetchOwner = async (currentToken: string) => {
-    if (!currentToken) {
-      setOwnerEvent(null);
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/events/${eventId}/owner`, {
-        headers: { Authorization: `Bearer ${currentToken}` }
-      });
-
-      if (!response.ok) {
-        throw new Error('not owner');
+  const fetchOwner = useCallback(
+    async (currentToken: string) => {
+      if (!currentToken) {
+        setOwnerEvent(null);
+        return;
       }
 
-      const data = (await response.json()) as OwnerEvent;
-      setOwnerEvent(data);
-      setStatusMessage('');
-    } catch {
-      setOwnerEvent(null);
-      setStatusMessage('Token cannot manage this event.');
-    }
-  };
+      try {
+        const response = await fetch(`${API_BASE}/events/${eventId}/owner`, {
+          headers: { Authorization: `Bearer ${currentToken}` }
+        });
+
+        if (!response.ok) {
+          throw new Error('not owner');
+        }
+
+        const data = (await response.json()) as OwnerEvent;
+        setOwnerEvent(data);
+        setStatusMessage('');
+      } catch {
+        setOwnerEvent(null);
+        setStatusMessage('Token cannot manage this event.');
+      }
+    },
+    [eventId]
+  );
 
   useEffect(() => {
     fetchOwner(token);
-  }, [token, eventId]);
+  }, [fetchOwner, token]);
 
   const handlePublish = async () => {
     if (!token) {
