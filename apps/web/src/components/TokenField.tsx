@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 
 type TokenFieldProps = {
   onToken?: (token: string) => void;
+  label?: string;
 };
 
-export function TokenField({ onToken }: TokenFieldProps) {
+export function TokenField({ onToken, label = 'Organizer JWT' }: TokenFieldProps) {
   const [token, setToken] = useState('');
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export function TokenField({ onToken }: TokenFieldProps) {
 
   return (
     <label className="flex flex-col gap-2 text-sm">
-      Organizer JWT
+      {label}
       <input
         className="rounded-lg border border-neutral-300 bg-white/70 px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-900"
         placeholder="Paste access token"

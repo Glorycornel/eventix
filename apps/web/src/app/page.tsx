@@ -26,15 +26,13 @@ export default async function HomePage() {
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-16">
       <header className="grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-end">
         <div className="space-y-4">
-          <p className="text-xs uppercase tracking-[0.4em] text-emerald-300">
-            Eventix
-          </p>
+          <p className="text-xs uppercase tracking-[0.4em] text-emerald-300">Eventix</p>
           <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
             Find the nights that move your city.
           </h1>
           <p className="max-w-xl text-base text-neutral-300 md:text-lg">
-            Browse approved events and reserve your seat. Organizers can launch
-            new events in minutes.
+            Browse approved events and reserve your seat. Organizers can launch new events in
+            minutes.
           </p>
         </div>
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
@@ -56,6 +54,22 @@ export default async function HomePage() {
         </div>
       </header>
 
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="space-y-3">
+          <p className="text-xs uppercase tracking-[0.3em] text-emerald-300">Ticket access</p>
+          <h2 className="text-2xl font-semibold">Keep your tickets close</h2>
+          <p className="text-sm text-neutral-300">
+            Paste the access token you were given to reveal your booked tickets and their QR codes.
+          </p>
+          <Link
+            href="/me/tickets"
+            className="inline-flex w-full justify-center rounded-full border border-emerald-400/60 px-4 py-2 text-sm text-emerald-200 transition hover:border-emerald-200 sm:w-auto"
+          >
+            My tickets
+          </Link>
+        </div>
+      </section>
+
       <section className="grid gap-6 md:grid-cols-2">
         {events.length === 0 ? (
           <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-sm text-neutral-300">
@@ -70,13 +84,9 @@ export default async function HomePage() {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 via-transparent to-sky-400/10 opacity-0 transition group-hover:opacity-100" />
               <div className="relative z-10 flex flex-col gap-3">
-                <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">
-                  {event.city}
-                </p>
+                <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">{event.city}</p>
                 <h2 className="text-2xl font-semibold">{event.title}</h2>
-                <p className="text-sm text-neutral-300 line-clamp-2">
-                  {event.description}
-                </p>
+                <p className="text-sm text-neutral-300 line-clamp-2">{event.description}</p>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
                   <span>{event.venue}</span>
                   <span>-</span>
