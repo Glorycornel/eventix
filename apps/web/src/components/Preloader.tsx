@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const messages = [
   'Pixel-perfect moments loading',
@@ -12,12 +12,14 @@ const messages = [
 
 export function Preloader() {
   const [visible, setVisible] = useState(true);
-  const [message, setMessage] = useState(messages[0]);
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const handleLoad = () => setVisible(false);
     const fallback = setTimeout(handleLoad, 2000);
     window.addEventListener('load', handleLoad);
+
+    setMessage(messages[0]);
 
     const interval = setInterval(() => {
       setMessage(messages[Math.floor(Math.random() * messages.length)]);
@@ -48,7 +50,7 @@ export function Preloader() {
             className="relative h-20 w-auto object-contain"
           />
         </div>
-        <p className="text-xs uppercase tracking-[0.6em] text-white/70">{message}</p>
+        <p className="text-xs uppercase tracking-[0.6em] text-white/70">{message ?? 'Loading'}</p>
       </div>
     </div>
   );
