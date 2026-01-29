@@ -24,16 +24,16 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-16">
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-4 px-6 py-8">
       <header className="grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-end">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3 justify-start -ml-6 md:-ml-12">
             <Image
               src="/images/eventix_logo.png"
-              width={120}
-              height={32}
+              width={600}
+              height={320}
               alt="Eventix"
-              className="h-6 w-auto"
+              className="h-[300px] w-auto"
             />
             <span className="sr-only">Eventix</span>
           </div>

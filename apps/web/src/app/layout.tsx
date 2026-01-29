@@ -1,5 +1,6 @@
 import { Fraunces, Space_Grotesk } from 'next/font/google';
 import '../styles/globals.css';
+import { Preloader } from '../components/Preloader';
 
 const display = Fraunces({
   subsets: ['latin'],
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body className="bg-neutral-950 text-neutral-100">
+        <Preloader />
         <div
           className="relative min-h-screen"
           style={{
