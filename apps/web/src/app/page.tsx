@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { apiFetch } from '../lib/api';
 import { formatDateRange } from '../lib/format';
@@ -26,7 +27,16 @@ export default async function HomePage() {
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-16">
       <header className="grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-end">
         <div className="space-y-4">
-          <p className="text-xs uppercase tracking-[0.4em] text-emerald-300">Eventix</p>
+          <div className="flex items-center gap-3">
+            <Image
+              src="/images/eventix_logo.png"
+              width={120}
+              height={32}
+              alt="Eventix"
+              className="h-6 w-auto"
+            />
+            <span className="sr-only">Eventix</span>
+          </div>
           <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
             Find the nights that move your city.
           </h1>
