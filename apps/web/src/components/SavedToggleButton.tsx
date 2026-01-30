@@ -23,7 +23,7 @@ export function SavedToggleButton({ eventId, className }: SavedToggleButtonProps
 
   const toggleSaved = () => {
     if (!token) {
-      openAuthModal('Sign in to save events for later.');
+      openAuthModal('Sign in to save events for later.', 'login');
       return;
     }
     const updated = isSaved

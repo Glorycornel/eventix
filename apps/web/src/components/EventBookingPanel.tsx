@@ -43,7 +43,7 @@ export function EventBookingPanel({ eventId, ticketTypes }: EventBookingPanelPro
 
   const handleCheckout = async () => {
     if (!token) {
-      openAuthModal('Sign in to book tickets.');
+      openAuthModal('Sign in to book tickets.', 'login');
       return;
     }
 

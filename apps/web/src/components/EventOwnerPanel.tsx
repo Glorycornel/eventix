@@ -52,7 +52,7 @@ export function EventOwnerPanel({ eventId }: { eventId: string }) {
 
   const handlePublish = async () => {
     if (!token) {
-      openAuthModal('Sign in to manage this event.');
+      openAuthModal('Sign in to manage this event.', 'login');
       return;
     }
 
@@ -97,7 +97,7 @@ export function EventOwnerPanel({ eventId }: { eventId: string }) {
       ) : (
         <button
           type="button"
-          onClick={() => openAuthModal('Sign in to manage this event.')}
+          onClick={() => openAuthModal('Sign in to manage this event.', 'login')}
           className="mt-2 w-fit rounded-full border border-emerald-400/60 px-5 py-2 text-xs uppercase tracking-[0.3em] text-emerald-200 transition hover:border-emerald-200"
         >
           Sign in to manage

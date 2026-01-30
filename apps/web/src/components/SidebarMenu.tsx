@@ -156,6 +156,7 @@ export function SidebarMenu({ buttonClassName = '' }: { buttonClassName?: string
                     event.preventDefault();
                     openAuthModal(
                       'Sign in to access saved events, tickets, and your account.',
+                      'login',
                     );
                     return;
                   }

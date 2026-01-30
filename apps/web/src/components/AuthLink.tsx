@@ -23,7 +23,7 @@ export function AuthLink({ href, className, intent, children }: AuthLinkProps) {
         onClick={(event) => {
           if (!token) {
             event.preventDefault();
-            openAuthModal(intent);
+            openAuthModal(intent, 'login');
           }
         }}
       >

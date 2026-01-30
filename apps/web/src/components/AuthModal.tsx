@@ -6,9 +6,10 @@ type AuthModalProps = {
   open: boolean;
   onClose: () => void;
   intent?: string;
+  initialMode?: 'login' | 'signup';
 };
 
-export function AuthModal({ open, onClose, intent }: AuthModalProps) {
+export function AuthModal({ open, onClose, intent, initialMode }: AuthModalProps) {
   if (!open) {
     return null;
   }
@@ -34,6 +35,7 @@ export function AuthModal({ open, onClose, intent }: AuthModalProps) {
         <div className="mt-6">
           <AuthForm
             compact
+            initialMode={initialMode}
             headline="Use your Eventix account"
             onSuccess={onClose}
             helper="Use your Eventix account to unlock tickets, saved events, and organizer tools."

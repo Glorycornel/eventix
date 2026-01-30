@@ -54,7 +54,7 @@ export function DiscoverAuthActions() {
       <button
         type="button"
         onClick={() =>
-          openAuthModal('Sign in or create an account to save events and book tickets.')
+          openAuthModal('Sign in or create an account to save events and book tickets.', 'login')
         }
         className="rounded-full border border-white/20 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white/50"
       >
@@ -63,7 +63,7 @@ export function DiscoverAuthActions() {
       <button
         type="button"
         onClick={() =>
-          openAuthModal('Sign in or create an account to save events and book tickets.')
+          openAuthModal('Sign in or create an account to save events and book tickets.', 'signup')
         }
         className="rounded-full border border-emerald-400/60 bg-emerald-300/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-emerald-200 transition hover:border-emerald-200"
       >
