@@ -1,109 +1,122 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { API_BASE } from '../../../../../lib/api';
 import { BannerUploadField } from '../../../../../components/BannerUploadField';
-import { TokenField } from '../../../../../components/TokenField';
+import { AuthPrompt } from '../../../../../components/AuthPrompt';
+import { useAuth } from '../../../../../components/AuthProvider';
 
-type EventFormState = {
+type EventDetail = {
+  id: string;
   title: string;
   description: string;
-  venue: string;
   city: string;
+  venue: string;
   startAt: string;
   endAt: string;
-  bannerUrl: string;
+  bannerUrl: string | null;
   status: string;
 };
 
-export default function EditEventPage({
-  params
-}: {
-  params: { id: string };
-}) {
-  const [token, setToken] = useState('');
-  const [status, setStatus] = useState('');
-  const [formState, setFormState] = useState<EventFormState>({
-    title: '',
-    description: '',
-    venue: '',
-    city: '',
-    startAt: '',
-    endAt: '',
-    bannerUrl: '',
-    status: 'DRAFT'
-  });
+function toInputDateTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const offsetMs = date.getTimezoneOffset() * 60000;
+  const local = new Date(date.getTime() - offsetMs);
+  return local.toISOString().slice(0, 16);
+}
+
+export default function EditEventPage({ params }: { params: { id: string } }) {
+  const { token } = useAuth();
+  const [eventData, setEventData] = useState<EventDetail | null>(null);
+  const [status, setStatus] = useState('Loading event...');
+  const [bannerUrl, setBannerUrl] = useState('');
+
+  const startInput = useMemo(
+    () => (eventData?.startAt ? toInputDateTime(eventData.startAt) : ''),
+    [eventData?.startAt],
+  );
+  const endInput = useMemo(
+    () => (eventData?.endAt ? toInputDateTime(eventData.endAt) : ''),
+    [eventData?.endAt],
+  );
 
   useEffect(() => {
     if (!token) {
+      setEventData(null);
+      setStatus('Sign in to load the event.');
       return;
     }
+
+    setStatus('Loading event...');
     fetch(`${API_BASE}/events/${params.id}/owner`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => (res.ok ? res.json() : Promise.reject(res.statusText)))
-      .then((data) => {
-        setFormState({
-          title: data.title || '',
-          description: data.description || '',
-          venue: data.venue || '',
-          city: data.city || '',
-          startAt: data.startAt ? data.startAt.slice(0, 16) : '',
-          endAt: data.endAt ? data.endAt.slice(0, 16) : '',
-          bannerUrl: data.bannerUrl || '',
-          status: data.status || 'DRAFT'
-        });
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data: EventDetail) => {
+        setEventData(data);
+        setBannerUrl(data.bannerUrl || '');
         setStatus('');
       })
-      .catch(() => setStatus('Unable to load event with that token.'));
-  }, [token, params.id]);
+      .catch(() => {
+        setEventData(null);
+        setStatus('Unable to load event with that account.');
+      });
+  }, [params.id, token]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setStatus('');
+    if (!token) {
+      setStatus('Please sign in first.');
+      return;
+    }
+
+    const form = new FormData(event.currentTarget);
+    const payload = {
+      title: String(form.get('title') || ''),
+      description: String(form.get('description') || ''),
+      venue: String(form.get('venue') || ''),
+      city: String(form.get('city') || ''),
+      startAt: String(form.get('startAt') || ''),
+      endAt: String(form.get('endAt') || ''),
+      bannerUrl: bannerUrl || null,
+    };
+
+    setStatus('Saving changes...');
     try {
       const response = await fetch(`${API_BASE}/events/${params.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title: formState.title,
-          description: formState.description,
-          venue: formState.venue,
-          city: formState.city,
-          startAt: formState.startAt,
-          endAt: formState.endAt,
-          bannerUrl: formState.bannerUrl
-        })
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         throw new Error(await response.text());
       }
 
+      const updated = (await response.json()) as EventDetail;
+      setEventData(updated);
+      setBannerUrl(updated.bannerUrl || '');
       setStatus('Event updated.');
     } catch {
-      setStatus('Unable to update event.');
+      setStatus('Unable to save changes.');
     }
   };
 
-  const handlePublish = async () => {
-    if (!token) {
-      return;
-    }
-    await fetch(`${API_BASE}/events/${params.id}/publish`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setStatus('Event published.');
-  };
-
-  const updateField = (key: keyof EventFormState, value: string) => {
-    setFormState((prev) => ({ ...prev, [key]: value }));
-  };
+  if (!token) {
+    return (
+      <AuthPrompt
+        title="Sign in to edit events"
+        description="Use your organizer account to update event details."
+      />
+    );
+  }
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-10 px-6 py-16">
@@ -114,49 +127,40 @@ export default function EditEventPage({
         Back to organizer
       </Link>
 
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold">Edit event</h1>
-          <p className="text-sm text-neutral-300">
-            Status: {formState.status}
-          </p>
-        </div>
-        {formState.status !== 'APPROVED' ? (
-          <button
-            type="button"
-            onClick={handlePublish}
-            className="rounded-full border border-emerald-400/60 px-5 py-2 text-sm text-emerald-200 transition hover:border-emerald-200"
-          >
-            Publish
-          </button>
-        ) : null}
+      <header className="space-y-3">
+        <h1 className="text-3xl font-semibold">Edit event</h1>
+        <p className="text-sm text-neutral-300">
+          Update your event details and keep the listing current.
+        </p>
       </header>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <TokenField onToken={setToken} />
-        {status ? <p className="mt-3 text-xs text-emerald-200">{status}</p> : null}
-      </section>
+      {status ? (
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <p className="text-xs text-emerald-200">{status}</p>
+        </section>
+      ) : null}
 
       <form
         onSubmit={handleSubmit}
+        key={eventData?.id ?? 'empty'}
         className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-6"
       >
         <div className="grid gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-2 text-sm">
             Title
             <input
-              value={formState.title}
-              onChange={(event) => updateField('title', event.target.value)}
+              name="title"
               required
+              defaultValue={eventData?.title || ''}
               className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
             />
           </label>
           <label className="flex flex-col gap-2 text-sm">
             City
             <input
-              value={formState.city}
-              onChange={(event) => updateField('city', event.target.value)}
+              name="city"
               required
+              defaultValue={eventData?.city || ''}
               className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
             />
           </label>
@@ -164,19 +168,19 @@ export default function EditEventPage({
         <label className="flex flex-col gap-2 text-sm">
           Venue
           <input
-            value={formState.venue}
-            onChange={(event) => updateField('venue', event.target.value)}
+            name="venue"
             required
+            defaultValue={eventData?.venue || ''}
             className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
           />
         </label>
         <label className="flex flex-col gap-2 text-sm">
           Description
           <textarea
-            value={formState.description}
-            onChange={(event) => updateField('description', event.target.value)}
+            name="description"
             required
             rows={4}
+            defaultValue={eventData?.description || ''}
             className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
           />
         </label>
@@ -185,9 +189,9 @@ export default function EditEventPage({
             Start time
             <input
               type="datetime-local"
-              value={formState.startAt}
-              onChange={(event) => updateField('startAt', event.target.value)}
+              name="startAt"
               required
+              defaultValue={startInput}
               className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
             />
           </label>
@@ -195,21 +199,18 @@ export default function EditEventPage({
             End time
             <input
               type="datetime-local"
-              value={formState.endAt}
-              onChange={(event) => updateField('endAt', event.target.value)}
+              name="endAt"
               required
+              defaultValue={endInput}
               className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
             />
           </label>
         </div>
-        <BannerUploadField
-          token={token}
-          value={formState.bannerUrl}
-          onChange={(value) => updateField('bannerUrl', value)}
-        />
+        <BannerUploadField token={token} value={bannerUrl} onChange={setBannerUrl} />
         <button
           type="submit"
-          className="mt-2 w-fit rounded-full border border-emerald-400/60 px-6 py-2 text-sm text-emerald-200 transition hover:border-emerald-200"
+          disabled={!eventData}
+          className="mt-2 w-fit rounded-full border border-emerald-400/60 px-6 py-2 text-sm text-emerald-200 transition hover:border-emerald-200 disabled:cursor-not-allowed disabled:border-neutral-700 disabled:text-neutral-500"
         >
           Save changes
         </button>

@@ -4,10 +4,10 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 const messages = [
-  'Pixel-perfect moments loading',
-  'Aligning the neon constellations',
-  'Warming up your QR codes',
-  'Summoning Eventix for you',
+  'CREATE. BOOK. ATTEND.',
+  'Events, Simplified. Secure',
+  'Smarter Event Booking',
+  'Events Without Friction',
 ];
 
 export function Preloader() {

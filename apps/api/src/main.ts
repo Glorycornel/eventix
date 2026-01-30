@@ -1,6 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import bodyParser from 'body-parser';
+import * as bodyParser from 'body-parser';
 import { AppModule } from './modules/app.module';
 
 async function bootstrap() {

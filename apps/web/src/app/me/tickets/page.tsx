@@ -5,7 +5,8 @@ import { useCallback, useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { API_BASE } from '../../../lib/api';
 import { formatDateRange } from '../../../lib/format';
-import { TokenField } from '../../../components/TokenField';
+import { AuthPrompt } from '../../../components/AuthPrompt';
+import { useAuth } from '../../../components/AuthProvider';
 
 type TicketWithDetails = {
   id: string;
@@ -105,14 +106,14 @@ function TicketCard({ ticket }: { ticket: TicketWithDetails }) {
 }
 
 export default function MyTicketsPage() {
-  const [token, setToken] = useState('');
+  const { token } = useAuth();
   const [tickets, setTickets] = useState<TicketWithDetails[]>([]);
-  const [status, setStatus] = useState('Enter your access token to load purchased tickets.');
+  const [status, setStatus] = useState('Loading tickets...');
 
   const loadTickets = useCallback(async () => {
     if (!token) {
       setTickets([]);
-      setStatus('Enter your access token to load purchased tickets.');
+      setStatus('Sign in to load purchased tickets.');
       return;
     }
 
@@ -136,13 +137,22 @@ export default function MyTicketsPage() {
       setStatus('');
     } catch {
       setTickets([]);
-      setStatus('Unable to load tickets with that token.');
+      setStatus('Unable to load tickets with that account.');
     }
   }, [token]);
 
   useEffect(() => {
     void loadTickets();
   }, [loadTickets]);
+
+  if (!token) {
+    return (
+      <AuthPrompt
+        title="Sign in to view tickets"
+        description="Access your booked tickets, QR codes, and entry details."
+      />
+    );
+  }
 
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-16">
@@ -158,19 +168,15 @@ export default function MyTicketsPage() {
       </header>
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <div className="flex flex-col gap-4">
-          <TokenField label="Access token" onToken={setToken} />
-          <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-400">
-            <button
-              type="button"
-              onClick={() => void loadTickets()}
-              disabled={!token}
-              className="rounded-full border border-white/20 px-4 py-2 text-xs transition hover:border-white/60 disabled:cursor-not-allowed disabled:border-neutral-700 disabled:text-neutral-600"
-            >
-              Refresh
-            </button>
-            {status ? <p className="text-xs text-emerald-200">{status}</p> : null}
-          </div>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-400">
+          <button
+            type="button"
+            onClick={() => void loadTickets()}
+            className="rounded-full border border-white/20 px-4 py-2 text-xs transition hover:border-white/60"
+          >
+            Refresh
+          </button>
+          {status ? <p className="text-xs text-emerald-200">{status}</p> : null}
         </div>
       </section>
 

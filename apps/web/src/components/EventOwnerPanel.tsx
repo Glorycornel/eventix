@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { API_BASE } from '../lib/api';
-import { TokenField } from './TokenField';
+import { useAuth } from './AuthProvider';
+import { useAuthModal } from './AuthModalProvider';
 
 type OwnerEvent = {
   id: string;
@@ -12,20 +13,22 @@ type OwnerEvent = {
 };
 
 export function EventOwnerPanel({ eventId }: { eventId: string }) {
-  const [token, setToken] = useState('');
+  const { token } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const [ownerEvent, setOwnerEvent] = useState<OwnerEvent | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
 
   const fetchOwner = useCallback(
-    async (currentToken: string) => {
-      if (!currentToken) {
+    async () => {
+      if (!token) {
         setOwnerEvent(null);
+        setStatusMessage('');
         return;
       }
 
       try {
         const response = await fetch(`${API_BASE}/events/${eventId}/owner`, {
-          headers: { Authorization: `Bearer ${currentToken}` }
+          headers: { Authorization: `Bearer ${token}` }
         });
 
         if (!response.ok) {
@@ -37,19 +40,19 @@ export function EventOwnerPanel({ eventId }: { eventId: string }) {
         setStatusMessage('');
       } catch {
         setOwnerEvent(null);
-        setStatusMessage('Token cannot manage this event.');
+        setStatusMessage('Sign in with the organizer account for this event.');
       }
     },
-    [eventId]
+    [eventId, token]
   );
 
   useEffect(() => {
-    fetchOwner(token);
+    fetchOwner();
   }, [fetchOwner, token]);
 
   const handlePublish = async () => {
     if (!token) {
-      setStatusMessage('Please provide a token first.');
+      openAuthModal('Sign in to manage this event.');
       return;
     }
 
@@ -64,7 +67,7 @@ export function EventOwnerPanel({ eventId }: { eventId: string }) {
       return;
     }
 
-    await fetchOwner(token);
+    await fetchOwner();
     setStatusMessage('Published.');
   };
 
@@ -87,10 +90,19 @@ export function EventOwnerPanel({ eventId }: { eventId: string }) {
         ) : null}
       </div>
 
-      <TokenField onToken={(value) => setToken(value)} />
-      {statusMessage ? (
-        <p className="mt-3 text-xs text-emerald-200">{statusMessage}</p>
-      ) : null}
+      {token ? (
+        statusMessage ? (
+          <p className="mt-3 text-xs text-emerald-200">{statusMessage}</p>
+        ) : null
+      ) : (
+        <button
+          type="button"
+          onClick={() => openAuthModal('Sign in to manage this event.')}
+          className="mt-2 w-fit rounded-full border border-emerald-400/60 px-5 py-2 text-xs uppercase tracking-[0.3em] text-emerald-200 transition hover:border-emerald-200"
+        >
+          Sign in to manage
+        </button>
+      )}
 
       {ownerEvent && ownerEvent.status !== 'APPROVED' ? (
         <button

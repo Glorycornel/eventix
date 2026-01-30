@@ -1,18 +1,9 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import { apiFetch } from '../lib/api';
-import { formatDateRange } from '../lib/format';
-
-type EventItem = {
-  id: string;
-  title: string;
-  description: string;
-  city: string;
-  venue: string;
-  startAt: string;
-  endAt: string;
-  bannerUrl: string | null;
-};
+import { SidebarMenu } from '../components/SidebarMenu';
+import { DiscoverContent, EventItem } from '../components/DiscoverContent';
+import { AuthLink } from '../components/AuthLink';
+import { DiscoverAuthActions } from '../components/DiscoverAuthActions';
 
 export default async function HomePage() {
   let events: EventItem[] = [];
@@ -26,87 +17,53 @@ export default async function HomePage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-4 px-6 py-8">
       <header className="grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-end">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3 justify-start -ml-6 md:-ml-12">
+        <nav className="flex flex-wrap items-center justify-between gap-4 md:col-span-2">
+          <div className="flex items-center gap-3 -ml-6 md:-ml-12">
             <Image
               src="/images/eventix_logo.png"
               width={600}
               height={320}
               alt="Eventix"
-              className="h-[300px] w-auto"
+              className="h-[160px] w-auto"
             />
             <span className="sr-only">Eventix</span>
           </div>
+          <div className="flex items-center gap-3">
+            <DiscoverAuthActions />
+            <SidebarMenu />
+          </div>
+        </nav>
+        <div className="space-y-1">
           <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
-            Find the nights that move your city.
+            Find the events that move your city.
           </h1>
           <p className="max-w-xl text-base text-neutral-300 md:text-lg">
             Browse approved events and reserve your seat. Organizers can launch new events in
             minutes.
           </p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+        <div className="w-full rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
           <p className="text-sm text-neutral-300">Organizer quick links</p>
           <div className="mt-4 flex flex-col gap-3 text-sm">
-            <Link
+            <AuthLink
               href="/org/events"
               className="rounded-full border border-emerald-400/50 px-4 py-2 text-emerald-200 transition hover:border-emerald-200"
+              intent="Sign in to manage your events."
             >
               Manage events
-            </Link>
-            <Link
+            </AuthLink>
+            <AuthLink
               href="/org/events/new"
               className="rounded-full border border-white/20 px-4 py-2 text-neutral-200 transition hover:border-white/60"
+              intent="Sign in to create a new event."
             >
               Create new event
-            </Link>
+            </AuthLink>
           </div>
         </div>
       </header>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <div className="space-y-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-emerald-300">Ticket access</p>
-          <h2 className="text-2xl font-semibold">Keep your tickets close</h2>
-          <p className="text-sm text-neutral-300">
-            Paste the access token you were given to reveal your booked tickets and their QR codes.
-          </p>
-          <Link
-            href="/me/tickets"
-            className="inline-flex w-full justify-center rounded-full border border-emerald-400/60 px-4 py-2 text-sm text-emerald-200 transition hover:border-emerald-200 sm:w-auto"
-          >
-            My tickets
-          </Link>
-        </div>
-      </section>
-
-      <section className="grid gap-6 md:grid-cols-2">
-        {events.length === 0 ? (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-sm text-neutral-300">
-            No approved events yet. Create one from the organizer panel.
-          </div>
-        ) : (
-          events.map((event) => (
-            <Link
-              key={event.id}
-              href={`/events/${event.id}`}
-              className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 transition hover:border-emerald-300/60"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 via-transparent to-sky-400/10 opacity-0 transition group-hover:opacity-100" />
-              <div className="relative z-10 flex flex-col gap-3">
-                <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">{event.city}</p>
-                <h2 className="text-2xl font-semibold">{event.title}</h2>
-                <p className="text-sm text-neutral-300 line-clamp-2">{event.description}</p>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
-                  <span>{event.venue}</span>
-                  <span>-</span>
-                  <span>{formatDateRange(event.startAt, event.endAt)}</span>
-                </div>
-              </div>
-            </Link>
-          ))
-        )}
-      </section>
+      <DiscoverContent events={events} />
     </main>
   );
 }

@@ -6,7 +6,7 @@ import { CreateOrderDto } from '../orders/dto/create-order.dto';
 
 @Injectable()
 export class CheckoutService {
-  private readonly stripe: Stripe;
+  private readonly stripe: Stripe | null;
   private readonly appUrl: string;
 
   constructor(
@@ -14,15 +14,14 @@ export class CheckoutService {
     private readonly configService: ConfigService,
   ) {
     const secret = this.configService.get<string>('STRIPE_SECRET_KEY');
-    if (!secret) {
-      throw new InternalServerErrorException('Stripe secret key is not configured');
-    }
-
-    this.stripe = new Stripe(secret, { apiVersion: '2025-12-15.clover' });
+    this.stripe = secret ? new Stripe(secret, { apiVersion: '2025-12-15.clover' }) : null;
     this.appUrl = this.configService.get<string>('APP_URL') ?? 'http://localhost:3000';
   }
 
   async createSession(userId: string, dto: CreateOrderDto) {
+    if (!this.stripe) {
+      throw new InternalServerErrorException('Stripe secret key is not configured');
+    }
     const event = await this.ordersService.ensureEventApproved(dto.eventId);
 
     const order = await this.ordersService.createOrderWithItems({

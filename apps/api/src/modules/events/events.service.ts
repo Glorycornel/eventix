@@ -79,7 +79,9 @@ export class EventsService {
         city: dto.city,
         startAt: new Date(dto.startAt),
         endAt: new Date(dto.endAt),
-        bannerUrl: dto.bannerUrl
+        bannerUrl: dto.bannerUrl,
+        status: EventStatus.APPROVED,
+        submittedAt: new Date()
       }
     });
   }

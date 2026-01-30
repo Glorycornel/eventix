@@ -35,6 +35,8 @@ model User {
   email        String    @unique
   passwordHash String
   displayName  String
+  emailVerified Boolean  @default(false)
+  emailVerifiedAt DateTime?
   role         UserRole  @default(USER)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

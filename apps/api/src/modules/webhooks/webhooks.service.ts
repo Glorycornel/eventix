@@ -12,7 +12,7 @@ import { OrdersService } from '../orders/orders.service';
 
 @Injectable()
 export class WebhooksService {
-  private readonly stripe: Stripe;
+  private readonly stripe: Stripe | null;
 
   constructor(
     private readonly configService: ConfigService,
@@ -20,14 +20,13 @@ export class WebhooksService {
     private readonly ordersService: OrdersService,
   ) {
     const secret = this.configService.get<string>('STRIPE_SECRET_KEY');
-    if (!secret) {
-      throw new InternalServerErrorException('Stripe secret key is not configured');
-    }
-
-    this.stripe = new Stripe(secret, { apiVersion: '2025-12-15.clover' });
+    this.stripe = secret ? new Stripe(secret, { apiVersion: '2025-12-15.clover' }) : null;
   }
 
   async handleStripeEvent(rawBody: Buffer, signature: string | string[] | undefined) {
+    if (!this.stripe) {
+      throw new InternalServerErrorException('Stripe secret key is not configured');
+    }
     if (!signature) {
       throw new BadRequestException('Missing Stripe signature');
     }

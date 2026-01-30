@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { API_BASE } from '../../../../lib/api';
 import { BannerUploadField } from '../../../../components/BannerUploadField';
-import { TokenField } from '../../../../components/TokenField';
+import { AuthPrompt } from '../../../../components/AuthPrompt';
+import { useAuth } from '../../../../components/AuthProvider';
 
 export default function NewEventPage() {
-  const [token, setToken] = useState('');
+  const { token } = useAuth();
   const [status, setStatus] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
 
@@ -44,9 +45,18 @@ export default function NewEventPage() {
       setBannerUrl('');
       event.currentTarget.reset();
     } catch {
-      setStatus('Unable to create event. Check token and inputs.');
+      setStatus('Unable to create event. Check your details and try again.');
     }
   };
+
+  if (!token) {
+    return (
+      <AuthPrompt
+        title="Sign in to create events"
+        description="Create your organizer account to draft and publish new events."
+      />
+    );
+  }
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-10 px-6 py-16">
@@ -64,10 +74,11 @@ export default function NewEventPage() {
         </p>
       </header>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <TokenField onToken={setToken} />
-        {status ? <p className="mt-3 text-xs text-emerald-200">{status}</p> : null}
-      </section>
+      {status ? (
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <p className="text-xs text-emerald-200">{status}</p>
+        </section>
+      ) : null}
 
       <form
         onSubmit={handleSubmit}

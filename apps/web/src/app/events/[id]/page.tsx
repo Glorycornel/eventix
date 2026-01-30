@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { EventOwnerPanel } from '../../../components/EventOwnerPanel';
+import { EventBookingPanel } from '../../../components/EventBookingPanel';
+import { SavedToggleButton } from '../../../components/SavedToggleButton';
 import { apiFetch } from '../../../lib/api';
 import { formatDateRange } from '../../../lib/format';
 
@@ -44,12 +46,15 @@ export default async function EventDetailPage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-10 px-6 py-16">
-      <Link
-        href="/"
-        className="text-xs uppercase tracking-[0.3em] text-emerald-300"
-      >
-        Back to events
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/"
+          className="text-xs uppercase tracking-[0.3em] text-emerald-300"
+        >
+          Back to events
+        </Link>
+        <SavedToggleButton eventId={event.id} />
+      </div>
       <section className="rounded-3xl border border-white/10 bg-white/5 p-8">
         <h1 className="text-4xl font-semibold">{event.title}</h1>
         <p className="mt-3 text-sm text-neutral-300">{event.description}</p>
@@ -85,6 +90,7 @@ export default async function EventDetailPage({
           </div>
         )}
       </section>
+      <EventBookingPanel eventId={event.id} ticketTypes={ticketTypes} />
       <EventOwnerPanel eventId={params.id} />
     </main>
   );

@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { API_BASE } from '../../../lib/api';
-import { TokenField } from '../../../components/TokenField';
+import { AuthPrompt } from '../../../components/AuthPrompt';
+import { useAuth } from '../../../components/AuthProvider';
 
 type EventItem = {
   id: string;
@@ -14,7 +15,7 @@ type EventItem = {
 };
 
 export default function OrganizerEventsPage() {
-  const [token, setToken] = useState('');
+  const { token } = useAuth();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [error, setError] = useState('');
 
@@ -32,7 +33,7 @@ export default function OrganizerEventsPage() {
         setEvents(data);
         setError('');
       })
-      .catch(() => setError('Unable to load events with that token.'));
+      .catch(() => setError('Unable to load events with that account.'));
   }, [token]);
 
   const handlePublish = async (eventId: string) => {
@@ -51,6 +52,15 @@ export default function OrganizerEventsPage() {
     }
   };
 
+  if (!token) {
+    return (
+      <AuthPrompt
+        title="Sign in to manage events"
+        description="Use your account to view drafts, publish listings, and edit event details."
+      />
+    );
+  }
+
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-6 py-16">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -68,10 +78,11 @@ export default function OrganizerEventsPage() {
         </Link>
       </header>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <TokenField onToken={setToken} />
-        {error ? <p className="mt-3 text-xs text-rose-300">{error}</p> : null}
-      </section>
+      {error ? (
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <p className="text-xs text-rose-300">{error}</p>
+        </section>
+      ) : null}
 
       <section className="grid gap-4">
         {events.length === 0 ? (
