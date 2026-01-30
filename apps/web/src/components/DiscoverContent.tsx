@@ -129,10 +129,7 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
         try {
           const { latitude, longitude } = position.coords;
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
-            {
-              headers: { Accept: "application/json" },
-            },
+            `/api/geo/reverse?lat=${latitude}&lon=${longitude}`,
           );
           if (!response.ok) {
             throw new Error('Failed to resolve location');
@@ -179,10 +176,7 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
     const timeout = window.setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&accept-language=en&q=${encodeURIComponent(
-            trimmed,
-          )}`,
-          { headers: { Accept: 'application/json' } },
+          `/api/geo/search?q=${encodeURIComponent(trimmed)}`,
         );
         if (!response.ok) {
           throw new Error('Failed to fetch suggestions');
