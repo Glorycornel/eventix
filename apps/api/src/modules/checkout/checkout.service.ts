@@ -32,7 +32,7 @@ export class CheckoutService {
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
-      line_items: order.items.map((item) => ({
+      line_items: order.items.map((item: { quantity: number; unitPrice: number; ticketType: { name: string } }) => ({
         price_data: {
           currency: order.currency.toLowerCase(),
           product_data: {

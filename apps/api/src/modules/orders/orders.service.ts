@@ -33,7 +33,7 @@ export class OrdersService {
     }
 
     const ticketTypeCounts = this.groupItems(options.dto.items);
-    const ticketTypes = await this.prisma.ticketType.findMany({
+    const ticketTypes = (await this.prisma.ticketType.findMany({
       where: {
         id: { in: Array.from(ticketTypeCounts.keys()) },
         eventId: options.dto.eventId,
@@ -46,7 +46,14 @@ export class OrdersService {
         capacity: true,
         soldCount: true,
       },
-    });
+    })) as Array<{
+      id: string;
+      name: string;
+      price: number;
+      currency: string;
+      capacity: number;
+      soldCount: number;
+    }>;
 
     if (ticketTypes.length !== ticketTypeCounts.size) {
       throw new BadRequestException('One or more ticket types not found');
@@ -112,7 +119,7 @@ export class OrdersService {
   }
 
   async processPaidOrder(orderId: string) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
         include: { items: true, tickets: true },
@@ -127,13 +134,17 @@ export class OrdersService {
       }
 
       const ticketCounts = this.groupItems(order.items);
-      const ticketTypes = await tx.ticketType.findMany({
+      const ticketTypes = (await tx.ticketType.findMany({
         where: { id: { in: Array.from(ticketCounts.keys()) } },
         select: { id: true, capacity: true, soldCount: true },
-      });
+      })) as Array<{ id: string; capacity: number; soldCount: number }>;
 
       const ticketTypeMap = new Map(ticketTypes.map((type) => [type.id, type]));
-      const ticketsToCreate: Prisma.TicketCreateManyInput[] = [];
+      const ticketsToCreate: Array<{
+        orderId: string;
+        ticketTypeId: string;
+        token: string;
+      }> = [];
 
       for (const [ticketTypeId, quantity] of ticketCounts) {
         const ticketType = ticketTypeMap.get(ticketTypeId);
