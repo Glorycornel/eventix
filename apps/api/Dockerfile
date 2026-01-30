@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20-bullseye-slim AS builder
 
 WORKDIR /app
 RUN corepack enable
@@ -15,7 +15,7 @@ COPY packages/shared packages/shared
 RUN pnpm -C apps/api prisma:generate
 RUN pnpm -C apps/api build
 
-FROM node:20-alpine
+FROM node:20-bullseye-slim
 
 WORKDIR /app
 ENV NODE_ENV=production
