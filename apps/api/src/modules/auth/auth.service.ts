@@ -86,6 +86,35 @@ export class AuthService {
     return this.issueToken(user.id, user.email);
   }
 
+  async resendVerification(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, displayName: true, email: true, emailVerified: true },
+    });
+
+    if (!user || user.emailVerified) {
+      return { message: 'If an account exists, a verification email has been sent.' };
+    }
+
+    const token = await this.verificationService.createToken(user.id);
+    const appUrl = this.configService.get<string>('APP_URL') || 'http://localhost:3000';
+    const verifyUrl = `${appUrl}/verify-email?token=${token}`;
+
+    await this.mailService.send({
+      to: user.email,
+      subject: 'Confirm your Eventix account',
+      text: `Hi ${user.displayName}, confirm your email by visiting: ${verifyUrl}`,
+      html: `
+        <p>Hi ${user.displayName},</p>
+        <p>Please confirm your email to activate your Eventix account.</p>
+        <p><a href="${verifyUrl}">Confirm my email</a></p>
+        <p>If you did not request this, you can ignore this email.</p>
+      `,
+    });
+
+    return { message: 'Verification email sent. Please check your inbox to continue.' };
+  }
+
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

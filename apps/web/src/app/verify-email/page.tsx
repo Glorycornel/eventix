@@ -10,6 +10,9 @@ function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
   const [status, setStatus] = useState('Verifying your email...');
+  const [errorState, setErrorState] = useState<'none' | 'invalid'>('none');
+  const [email, setEmail] = useState('');
+  const [resendStatus, setResendStatus] = useState('');
   const { openAuthModal } = useAuthModal();
 
   useEffect(() => {
@@ -22,11 +25,38 @@ function VerifyEmailContent() {
       .then((res) => (res.ok ? res.json() : Promise.reject(res)))
       .then(() => {
         setStatus('Email verified. You can now sign in.');
+        setErrorState('none');
       })
       .catch(() => {
         setStatus('Verification link is invalid or expired.');
+        setErrorState('invalid');
       });
   }, [token]);
+
+  const handleResend = async () => {
+    if (!email) {
+      setResendStatus('Enter your email to resend the verification link.');
+      return;
+    }
+
+    setResendStatus('Sending verification email...');
+    try {
+      const response = await fetch(`${API_BASE}/auth/resend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error();
+      }
+
+      const data = (await response.json()) as { message?: string };
+      setResendStatus(data.message || 'Verification email sent.');
+    } catch {
+      setResendStatus('Unable to resend verification email.');
+    }
+  };
 
   return (
     <>
@@ -41,6 +71,30 @@ function VerifyEmailContent() {
       >
         Sign in
       </button>
+      {errorState === 'invalid' ? (
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-neutral-200">
+          <p className="text-neutral-300">
+            Need a new verification email? Enter your account email below.
+          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
+              className="w-full rounded-full border border-white/10 bg-neutral-950/70 px-4 py-2 text-sm text-white"
+            />
+            <button
+              type="button"
+              onClick={handleResend}
+              className="rounded-full border border-emerald-400/60 px-5 py-2 text-xs uppercase tracking-[0.3em] text-emerald-200 transition hover:border-emerald-200"
+            >
+              Resend
+            </button>
+          </div>
+          {resendStatus ? <p className="mt-3 text-xs text-emerald-200">{resendStatus}</p> : null}
+        </div>
+      ) : null}
     </>
   );
 }
