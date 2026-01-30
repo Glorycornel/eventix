@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { API_BASE } from '../../lib/api';
 import { useAuthModal } from '../../components/AuthModalProvider';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
   const [status, setStatus] = useState('Verifying your email...');
@@ -29,10 +29,7 @@ export default function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 px-6 py-16">
-      <Link href="/" className="text-xs uppercase tracking-[0.3em] text-emerald-300">
-        Back to events
-      </Link>
+    <>
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold">Confirm your email</h1>
         <p className="text-sm text-neutral-300">{status}</p>
@@ -44,6 +41,19 @@ export default function VerifyEmailPage() {
       >
         Sign in
       </button>
+    </>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 px-6 py-16">
+      <Link href="/" className="text-xs uppercase tracking-[0.3em] text-emerald-300">
+        Back to events
+      </Link>
+      <Suspense fallback={<p className="text-sm text-neutral-300">Loading...</p>}>
+        <VerifyEmailContent />
+      </Suspense>
     </main>
   );
 }
