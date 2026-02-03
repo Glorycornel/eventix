@@ -55,13 +55,16 @@ export function BannerUploadField({
       });
 
       if (!uploadResult.ok) {
-        throw new Error('Upload failed');
+        const errorText = await uploadResult.text();
+        throw new Error(errorText || `Upload failed (${uploadResult.status})`);
       }
 
       onChange(presignData.publicUrl || presignData.key);
       setStatus('Uploaded.');
-    } catch {
-      setStatus('Upload failed.');
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message ? error.message : 'Upload failed.';
+      setStatus(message);
     }
   };
 

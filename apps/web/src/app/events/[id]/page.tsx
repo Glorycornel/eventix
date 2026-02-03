@@ -4,6 +4,7 @@ import { EventBookingPanel } from '../../../components/EventBookingPanel';
 import { SavedToggleButton } from '../../../components/SavedToggleButton';
 import { apiFetch } from '../../../lib/api';
 import { formatDateRange } from '../../../lib/format';
+import { resolvePublicAssetUrl } from '../../../lib/urls';
 
 type EventDetail = {
   id: string;
@@ -33,6 +34,7 @@ export default async function EventDetailPage({
   const event = await apiFetch<EventDetail>(`/events/${params.id}`, {
     cache: 'no-store'
   });
+  const bannerUrl = resolvePublicAssetUrl(event.bannerUrl);
   let ticketTypes: TicketType[] = [];
 
   try {
@@ -56,6 +58,16 @@ export default async function EventDetailPage({
         <SavedToggleButton eventId={event.id} />
       </div>
       <section className="rounded-3xl border border-white/10 bg-white/5 p-8">
+        {bannerUrl ? (
+          <div className="mb-6 overflow-hidden rounded-2xl border border-white/10">
+            <img
+              src={bannerUrl}
+              alt=""
+              className="h-56 w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        ) : null}
         <h1 className="text-4xl font-semibold">{event.title}</h1>
         <p className="mt-3 text-sm text-neutral-300">{event.description}</p>
         <div className="mt-6 flex flex-wrap gap-4 text-sm text-neutral-400">

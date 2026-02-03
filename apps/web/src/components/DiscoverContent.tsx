@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { formatDateRange } from '../lib/format';
+import { resolvePublicAssetUrl } from '../lib/urls';
 import { AuthLink } from './AuthLink';
 import { SavedToggleButton } from './SavedToggleButton';
 
@@ -29,10 +30,12 @@ type DiscoverContentProps = {
   events: EventItem[];
 };
 
+const ALL_CITIES_LABEL = 'All cities';
+
 export function DiscoverContent({ events }: DiscoverContentProps) {
-  const [locationCity, setLocationCity] = useState('London');
-  const [locationLabel, setLocationLabel] = useState('London');
-  const [inputValue, setInputValue] = useState('London');
+  const [locationCity, setLocationCity] = useState('');
+  const [locationLabel, setLocationLabel] = useState(ALL_CITIES_LABEL);
+  const [inputValue, setInputValue] = useState('');
   const [geoStatus, setGeoStatus] = useState<GeoStatus>('idle');
   const [suggestionStatus, setSuggestionStatus] = useState<SuggestionStatus>('idle');
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
@@ -86,24 +89,10 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
     sortBy !== 'relevance';
 
   useEffect(() => {
-    const saved = window.localStorage.getItem('eventix:location');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as { city?: string; label?: string };
-        if (parsed.city) {
-          setLocationCity(parsed.city);
-          setLocationLabel(parsed.label ?? parsed.city);
-          setInputValue(parsed.label ?? parsed.city);
-        }
-      } catch {
-        setLocationCity(saved);
-        setLocationLabel(saved);
-        setInputValue(saved);
-      }
+    if (!locationCity) {
+      window.localStorage.removeItem('eventix:location');
+      return;
     }
-  }, []);
-
-  useEffect(() => {
     window.localStorage.setItem(
       'eventix:location',
       JSON.stringify({ city: locationCity, label: locationLabel }),
@@ -165,7 +154,10 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
 
   useEffect(() => {
     const trimmed = inputValue.trim();
-    if (trimmed.length < 2) {
+    if (
+      trimmed.length < 2 ||
+      trimmed.toLowerCase() === ALL_CITIES_LABEL.toLowerCase()
+    ) {
       setSuggestions([]);
       setSuggestionStatus('idle');
       return;
@@ -334,14 +326,35 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') {
                     event.preventDefault();
-                    setLocationCity(inputValue.trim() || locationCity);
-                    setLocationLabel(inputValue.trim() || locationLabel);
+                    const trimmed = inputValue.trim();
+                    if (!trimmed) {
+                      setLocationCity('');
+                      setLocationLabel(ALL_CITIES_LABEL);
+                      setInputValue('');
+                      setSuggestions([]);
+                      return;
+                    }
+                    setLocationCity(trimmed);
+                    setLocationLabel(trimmed);
+                    setInputValue(trimmed);
                     setSuggestions([]);
                   }
                 }}
               placeholder="Start typing a city..."
               className="w-full rounded-full border border-white/10 bg-neutral-950/80 px-4 py-2 text-sm text-white/90"
             />
+            <button
+              type="button"
+              onClick={() => {
+                setLocationCity('');
+                setLocationLabel(ALL_CITIES_LABEL);
+                setInputValue('');
+                setSuggestions([]);
+              }}
+              className="self-start text-xs uppercase tracking-[0.3em] text-neutral-400 transition hover:text-white sm:self-end"
+            >
+              Show all cities
+            </button>
             {inputValue.trim().length >= 2 && (
               <div className="absolute right-0 top-[4.75rem] z-20 w-full rounded-2xl border border-white/10 bg-neutral-950/95 p-2 shadow-xl shadow-black/40">
                 {suggestionStatus === 'loading' && (
@@ -660,29 +673,49 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
             No events currently listed in {locationLabel}.
           </div>
         ) : (
-          filteredEvents.map((event) => (
-            <div
-              key={event.id}
-              className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 transition hover:border-emerald-300/60"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 via-transparent to-sky-400/10 opacity-0 transition group-hover:opacity-100" />
-              <div className="relative z-10 flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">{event.city}</p>
-                  <SavedToggleButton eventId={event.id} />
-                </div>
-                <Link href={`/events/${event.id}`} className="space-y-2">
-                  <h2 className="text-2xl font-semibold">{event.title}</h2>
-                  <p className="text-sm text-neutral-300 line-clamp-2">{event.description}</p>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
-                    <span>{event.venue}</span>
-                    <span>-</span>
-                    <span>{formatDateRange(event.startAt, event.endAt)}</span>
+          filteredEvents.map((event) => {
+            const bannerUrl = resolvePublicAssetUrl(event.bannerUrl);
+
+            return (
+              <div
+                key={event.id}
+                className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 transition hover:border-emerald-300/60"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 via-transparent to-sky-400/10 opacity-0 transition group-hover:opacity-100" />
+                <div className="relative z-10 flex flex-col gap-3">
+                  <div className="overflow-hidden rounded-2xl border border-white/10 bg-neutral-950/70">
+                    {bannerUrl ? (
+                      <img
+                        src={bannerUrl}
+                        alt=""
+                        loading="lazy"
+                        className="h-40 w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-40 w-full bg-gradient-to-br from-emerald-400/20 via-sky-400/10 to-transparent" />
+                    )}
                   </div>
-                </Link>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">
+                      {event.city}
+                    </p>
+                    <SavedToggleButton eventId={event.id} />
+                  </div>
+                  <Link href={`/events/${event.id}`} className="space-y-2">
+                    <h2 className="text-2xl font-semibold">{event.title}</h2>
+                    <p className="text-sm text-neutral-300 line-clamp-2">
+                      {event.description}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
+                      <span>{event.venue}</span>
+                      <span>-</span>
+                      <span>{formatDateRange(event.startAt, event.endAt)}</span>
+                    </div>
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </section>
     </>

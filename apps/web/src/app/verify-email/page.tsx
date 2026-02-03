@@ -1,31 +1,45 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { API_BASE } from '../../lib/api';
 import { useAuthModal } from '../../components/AuthModalProvider';
+import { useAuth } from '../../components/AuthProvider';
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
   const [status, setStatus] = useState('Verifying your email...');
-  const [errorState, setErrorState] = useState<'none' | 'invalid'>('none');
+  const [errorState, setErrorState] = useState<'none' | 'invalid' | 'verified'>('none');
   const [email, setEmail] = useState('');
   const [resendStatus, setResendStatus] = useState('');
+  const didVerify = useRef(false);
   const { openAuthModal } = useAuthModal();
+  const router = useRouter();
+  const { token: authToken } = useAuth();
 
   useEffect(() => {
+    if (authToken) {
+      router.push('/');
+    }
+  }, [authToken, router]);
+
+  useEffect(() => {
+    if (didVerify.current) {
+      return;
+    }
     if (!token) {
       setStatus('Missing verification token.');
       return;
     }
+    didVerify.current = true;
 
     fetch(`${API_BASE}/auth/verify?token=${encodeURIComponent(token)}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(res)))
       .then(() => {
         setStatus('Email verified. You can now sign in.');
-        setErrorState('none');
+        setErrorState('verified');
       })
       .catch(() => {
         setStatus('Verification link is invalid or expired.');
@@ -66,11 +80,20 @@ function VerifyEmailContent() {
       </header>
       <button
         type="button"
-        onClick={() => openAuthModal('Sign in to continue.')}
+        onClick={() =>
+          openAuthModal('Sign in to continue.', 'login', () => router.push('/'))
+        }
         className="w-fit rounded-full border border-emerald-400/60 px-6 py-2 text-sm text-emerald-200 transition hover:border-emerald-200"
       >
         Sign in
       </button>
+      {errorState === 'verified' ? (
+        <div className="rounded-3xl border border-emerald-400/40 bg-emerald-500/10 p-6 text-sm text-emerald-100">
+          <p className="text-emerald-100">
+            Your email is verified. You can sign in now.
+          </p>
+        </div>
+      ) : null}
       {errorState === 'invalid' ? (
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-neutral-200">
           <p className="text-neutral-300">

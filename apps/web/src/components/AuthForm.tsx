@@ -24,6 +24,7 @@ export function AuthForm({
   const { setToken } = useAuth();
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [status, setStatus] = useState('');
+  const [verifyUrl, setVerifyUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -31,6 +32,7 @@ export function AuthForm({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus('');
+    setVerifyUrl(null);
 
     const form = new FormData(event.currentTarget);
     if (mode === 'signup') {
@@ -84,8 +86,11 @@ export function AuthForm({
           onSuccess();
         }
       } else {
-        const data = (await response.json()) as { message?: string };
+        const data = (await response.json()) as { message?: string; token?: string };
         setStatus(data.message || 'Check your email to confirm your account.');
+        if (data.token) {
+          setVerifyUrl(`/verify-email?token=${encodeURIComponent(data.token)}`);
+        }
       }
     } catch (error) {
       const fallback = mode === 'login' ? 'Login failed.' : 'Signup failed.';
@@ -94,6 +99,7 @@ export function AuthForm({
       } else {
         setStatus(fallback);
       }
+      setVerifyUrl(null);
     } finally {
       setLoading(false);
     }
@@ -115,6 +121,7 @@ export function AuthForm({
           onClick={() => {
             setMode(mode === 'login' ? 'signup' : 'login');
             setStatus('');
+            setVerifyUrl(null);
           }}
           className="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white/70 transition hover:border-white/30"
         >
@@ -123,6 +130,11 @@ export function AuthForm({
       </div>
 
       {helper ? <p className="mt-2 text-sm text-neutral-300">{helper}</p> : null}
+      {verifyUrl ? (
+        <p className="mt-2 text-sm text-emerald-200">
+          Dev link: <a className="underline" href={verifyUrl}>Verify email now</a>
+        </p>
+      ) : null}
 
       <form onSubmit={handleSubmit} className="mt-6 grid gap-4 text-sm">
         {mode === 'signup' ? (

@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { API_BASE } from '../../../../../lib/api';
 import { BannerUploadField } from '../../../../../components/BannerUploadField';
+import { DateTimePicker } from '../../../../../components/DateTimePicker';
 import { AuthPrompt } from '../../../../../components/AuthPrompt';
 import { useAuth } from '../../../../../components/AuthProvider';
 
@@ -19,30 +20,13 @@ type EventDetail = {
   status: string;
 };
 
-function toInputDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  const offsetMs = date.getTimezoneOffset() * 60000;
-  const local = new Date(date.getTime() - offsetMs);
-  return local.toISOString().slice(0, 16);
-}
-
 export default function EditEventPage({ params }: { params: { id: string } }) {
   const { token } = useAuth();
   const [eventData, setEventData] = useState<EventDetail | null>(null);
   const [status, setStatus] = useState('Loading event...');
   const [bannerUrl, setBannerUrl] = useState('');
-
-  const startInput = useMemo(
-    () => (eventData?.startAt ? toInputDateTime(eventData.startAt) : ''),
-    [eventData?.startAt],
-  );
-  const endInput = useMemo(
-    () => (eventData?.endAt ? toInputDateTime(eventData.endAt) : ''),
-    [eventData?.endAt],
-  );
+  const [startAt, setStartAt] = useState('');
+  const [endAt, setEndAt] = useState('');
 
   useEffect(() => {
     if (!token) {
@@ -59,6 +43,8 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
       .then((data: EventDetail) => {
         setEventData(data);
         setBannerUrl(data.bannerUrl || '');
+        setStartAt(data.startAt || '');
+        setEndAt(data.endAt || '');
         setStatus('');
       })
       .catch(() => {
@@ -74,14 +60,19 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
       return;
     }
 
+    if (!startAt || !endAt) {
+      setStatus('Please select a start and end time.');
+      return;
+    }
+
     const form = new FormData(event.currentTarget);
     const payload = {
       title: String(form.get('title') || ''),
       description: String(form.get('description') || ''),
       venue: String(form.get('venue') || ''),
       city: String(form.get('city') || ''),
-      startAt: String(form.get('startAt') || ''),
-      endAt: String(form.get('endAt') || ''),
+      startAt,
+      endAt,
       bannerUrl: bannerUrl || null,
     };
 
@@ -103,6 +94,8 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
       const updated = (await response.json()) as EventDetail;
       setEventData(updated);
       setBannerUrl(updated.bannerUrl || '');
+      setStartAt(updated.startAt || '');
+      setEndAt(updated.endAt || '');
       setStatus('Event updated.');
     } catch {
       setStatus('Unable to save changes.');
@@ -185,26 +178,18 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
           />
         </label>
         <div className="grid gap-4 md:grid-cols-2">
-          <label className="flex flex-col gap-2 text-sm">
-            Start time
-            <input
-              type="datetime-local"
-              name="startAt"
-              required
-              defaultValue={startInput}
-              className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
-            />
-          </label>
-          <label className="flex flex-col gap-2 text-sm">
-            End time
-            <input
-              type="datetime-local"
-              name="endAt"
-              required
-              defaultValue={endInput}
-              className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
-            />
-          </label>
+          <DateTimePicker
+            label="Start time"
+            value={startAt}
+            onChange={setStartAt}
+            required
+          />
+          <DateTimePicker
+            label="End time"
+            value={endAt}
+            onChange={setEndAt}
+            required
+          />
         </div>
         <BannerUploadField token={token} value={bannerUrl} onChange={setBannerUrl} />
         <button

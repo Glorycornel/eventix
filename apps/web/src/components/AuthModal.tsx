@@ -7,12 +7,20 @@ type AuthModalProps = {
   onClose: () => void;
   intent?: string;
   initialMode?: 'login' | 'signup';
+  onSuccess?: () => void;
 };
 
-export function AuthModal({ open, onClose, intent, initialMode }: AuthModalProps) {
+export function AuthModal({ open, onClose, intent, initialMode, onSuccess }: AuthModalProps) {
   if (!open) {
     return null;
   }
+
+  const handleSuccess = () => {
+    onClose();
+    if (onSuccess) {
+      onSuccess();
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
@@ -37,7 +45,7 @@ export function AuthModal({ open, onClose, intent, initialMode }: AuthModalProps
             compact
             initialMode={initialMode}
             headline="Use your Eventix account"
-            onSuccess={onClose}
+            onSuccess={handleSuccess}
             helper="Use your Eventix account to unlock tickets, saved events, and organizer tools."
           />
         </div>

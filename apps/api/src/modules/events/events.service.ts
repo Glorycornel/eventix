@@ -30,7 +30,7 @@ export class EventsService {
         ...(from ? { startAt: { gte: new Date(from) } } : {}),
         ...(to ? { endAt: { lte: new Date(to) } } : {})
       },
-      orderBy: { startAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         title: true,

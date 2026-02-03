@@ -33,6 +33,12 @@ services:
       SMTP_PASS: ${SMTP_PASS}
       SMTP_FROM: ${SMTP_FROM}
       SMTP_SECURE: ${SMTP_SECURE}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: eventix
+      S3_ENDPOINT: https://ce9b9f6a606b3c8a285e512301594761.r2.cloudflarestorage.com
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL}
+      S3_REGION: auto
       PORT: 3001
     ports:
       - "3001:3001"
@@ -46,7 +52,9 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+        NEXT_PUBLIC_S3_PUBLIC_URL: ${NEXT_PUBLIC_S3_PUBLIC_URL}
     environment:
+      INTERNAL_API_BASE_URL: http://api:3001
       PORT: 3000
     ports:
       - "3000:3000"

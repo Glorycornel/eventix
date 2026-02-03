@@ -4,7 +4,11 @@ import { createContext, useContext, useMemo, useState } from 'react';
 import { AuthModal } from './AuthModal';
 
 type AuthModalContextValue = {
-  openAuthModal: (intent?: string, mode?: 'login' | 'signup') => void;
+  openAuthModal: (
+    intent?: string,
+    mode?: 'login' | 'signup',
+    onSuccess?: () => void
+  ) => void;
 };
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);
@@ -13,10 +17,16 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [intent, setIntent] = useState<string | undefined>(undefined);
   const [mode, setMode] = useState<'login' | 'signup' | undefined>(undefined);
+  const [successCallback, setSuccessCallback] = useState<(() => void) | undefined>(undefined);
 
-  const openAuthModal = (nextIntent?: string, nextMode?: 'login' | 'signup') => {
+  const openAuthModal = (
+    nextIntent?: string,
+    nextMode?: 'login' | 'signup',
+    nextOnSuccess?: () => void,
+  ) => {
     setIntent(nextIntent);
     setMode(nextMode);
+    setSuccessCallback(() => nextOnSuccess);
     setOpen(true);
   };
 
@@ -30,6 +40,7 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
         onClose={() => setOpen(false)}
         intent={intent}
         initialMode={mode}
+        onSuccess={successCallback}
       />
     </AuthModalContext.Provider>
   );
