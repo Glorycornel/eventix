@@ -22,10 +22,7 @@ export class TicketTypesController {
 
   @Post()
   @UseGuards(JwtAuthGuard, EventOwnerGuard)
-  create(
-    @Param('eventId') eventId: string,
-    @Body() body: CreateTicketTypeDto
-  ) {
+  create(@Param('eventId') eventId: string, @Body() body: CreateTicketTypeDto) {
     return this.ticketTypesService.create(eventId, body);
   }
 
@@ -34,17 +31,14 @@ export class TicketTypesController {
   update(
     @Param('eventId') eventId: string,
     @Param('ticketTypeId') ticketTypeId: string,
-    @Body() body: UpdateTicketTypeDto
+    @Body() body: UpdateTicketTypeDto,
   ) {
     return this.ticketTypesService.update(eventId, ticketTypeId, body);
   }
 
   @Delete(':ticketTypeId')
   @UseGuards(JwtAuthGuard, EventOwnerGuard)
-  remove(
-    @Param('eventId') eventId: string,
-    @Param('ticketTypeId') ticketTypeId: string
-  ) {
+  remove(@Param('eventId') eventId: string, @Param('ticketTypeId') ticketTypeId: string) {
     return this.ticketTypesService.remove(eventId, ticketTypeId);
   }
 }

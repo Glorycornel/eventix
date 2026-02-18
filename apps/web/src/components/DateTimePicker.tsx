@@ -123,9 +123,7 @@ export function DateTimePicker({ label, value, onChange, required }: DateTimePic
   }, [month]);
 
   const selectedDisplay =
-    selectedDate && isValidTime(timeValue)
-      ? formatDisplay(selectedDate, timeValue)
-      : '';
+    selectedDate && isValidTime(timeValue) ? formatDisplay(selectedDate, timeValue) : '';
 
   const monthLabel = new Intl.DateTimeFormat('en-US', {
     month: 'long',

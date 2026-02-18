@@ -4,11 +4,7 @@ import { createContext, useContext, useMemo, useState } from 'react';
 import { AuthModal } from './AuthModal';
 
 type AuthModalContextValue = {
-  openAuthModal: (
-    intent?: string,
-    mode?: 'login' | 'signup',
-    onSuccess?: () => void
-  ) => void;
+  openAuthModal: (intent?: string, mode?: 'login' | 'signup', onSuccess?: () => void) => void;
 };
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);

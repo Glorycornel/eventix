@@ -8,6 +8,6 @@ import { EventOwnerGuard } from './event-owner.guard';
   imports: [PrismaModule],
   controllers: [EventsController],
   providers: [EventsService, EventOwnerGuard],
-  exports: [EventsService, EventOwnerGuard]
+  exports: [EventsService, EventOwnerGuard],
 })
 export class EventsModule {}

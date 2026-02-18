@@ -9,11 +9,7 @@ type BannerUploadFieldProps = {
   onChange: (value: string) => void;
 };
 
-export function BannerUploadField({
-  token,
-  value,
-  onChange
-}: BannerUploadFieldProps) {
+export function BannerUploadField({ token, value, onChange }: BannerUploadFieldProps) {
   const [status, setStatus] = useState('');
 
   const handleUpload = async (file: File | null) => {
@@ -27,13 +23,13 @@ export function BannerUploadField({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           filename: file.name,
           contentType: file.type || 'application/octet-stream',
-          folder: 'events'
-        })
+          folder: 'events',
+        }),
       });
 
       if (!presignResponse.ok) {
@@ -49,9 +45,9 @@ export function BannerUploadField({
       const uploadResult = await fetch(presignData.uploadUrl, {
         method: 'PUT',
         headers: {
-          'Content-Type': file.type || 'application/octet-stream'
+          'Content-Type': file.type || 'application/octet-stream',
         },
-        body: file
+        body: file,
       });
 
       if (!uploadResult.ok) {
@@ -62,8 +58,7 @@ export function BannerUploadField({
       onChange(presignData.publicUrl || presignData.key);
       setStatus('Uploaded.');
     } catch (error) {
-      const message =
-        error instanceof Error && error.message ? error.message : 'Upload failed.';
+      const message = error instanceof Error && error.message ? error.message : 'Upload failed.';
       setStatus(message);
     }
   };

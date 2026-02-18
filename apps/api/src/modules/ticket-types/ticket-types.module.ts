@@ -7,6 +7,6 @@ import { TicketTypesService } from './ticket-types.service';
 @Module({
   imports: [PrismaModule, EventsModule],
   controllers: [TicketTypesController],
-  providers: [TicketTypesService]
+  providers: [TicketTypesService],
 })
 export class TicketTypesModule {}

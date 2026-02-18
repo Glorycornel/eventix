@@ -11,7 +11,7 @@ export class TicketTypesService {
   async listPublic(eventId: string) {
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
-      select: { status: true }
+      select: { status: true },
     });
 
     if (!event || event.status !== EventStatus.APPROVED) {
@@ -20,14 +20,14 @@ export class TicketTypesService {
 
     return this.prisma.ticketType.findMany({
       where: { eventId },
-      orderBy: { createdAt: 'asc' }
+      orderBy: { createdAt: 'asc' },
     });
   }
 
   async listOwner(eventId: string) {
     return this.prisma.ticketType.findMany({
       where: { eventId },
-      orderBy: { createdAt: 'asc' }
+      orderBy: { createdAt: 'asc' },
     });
   }
 
@@ -38,15 +38,15 @@ export class TicketTypesService {
         name: dto.name,
         price: dto.price,
         currency: dto.currency,
-        capacity: dto.capacity
-      }
+        capacity: dto.capacity,
+      },
     });
   }
 
   async update(eventId: string, ticketTypeId: string, dto: UpdateTicketTypeDto) {
     const ticketType = await this.prisma.ticketType.findUnique({
       where: { id: ticketTypeId },
-      select: { eventId: true }
+      select: { eventId: true },
     });
 
     if (!ticketType || ticketType.eventId !== eventId) {
@@ -59,15 +59,15 @@ export class TicketTypesService {
         name: dto.name,
         price: dto.price,
         currency: dto.currency,
-        capacity: dto.capacity
-      }
+        capacity: dto.capacity,
+      },
     });
   }
 
   async remove(eventId: string, ticketTypeId: string) {
     const ticketType = await this.prisma.ticketType.findUnique({
       where: { id: ticketTypeId },
-      select: { eventId: true }
+      select: { eventId: true },
     });
 
     if (!ticketType || ticketType.eventId !== eventId) {

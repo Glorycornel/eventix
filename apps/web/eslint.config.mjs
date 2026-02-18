@@ -5,7 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import { FlatCompat } from '@eslint/eslintrc';
 
 const compat = new FlatCompat({
-  baseDirectory: new URL('.', import.meta.url).pathname
+  baseDirectory: new URL('.', import.meta.url).pathname,
 });
 
 const [baseConfig] = compat.extends('plugin:@typescript-eslint/recommended');
@@ -20,14 +20,14 @@ export default [
         sourceType: 'module',
         ecmaVersion: 'latest',
         ecmaFeatures: {
-          jsx: true
-        }
-      }
+          jsx: true,
+        },
+      },
     },
     plugins: {
       react,
       'react-hooks': reactHooks,
-      'jsx-a11y': jsxA11y
+      'jsx-a11y': jsxA11y,
     },
     rules: {
       ...(baseConfig.rules || {}),
@@ -36,12 +36,12 @@ export default [
       'react/jsx-uses-vars': 'error',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-      'jsx-a11y/no-onchange': 'off'
+      'jsx-a11y/no-onchange': 'off',
     },
     settings: {
       react: {
-        version: 'detect'
-      }
-    }
-  }
+        version: 'detect',
+      },
+    },
+  },
 ];

@@ -15,7 +15,7 @@ export class UploadsService {
     const secretAccessKey = config.get<string>('S3_SECRET_KEY');
     const endpoint = this.normalizeEndpoint(
       config.get<string>('S3_ENDPOINT'),
-      config.get<string>('S3_BUCKET')
+      config.get<string>('S3_BUCKET'),
     );
     const region = config.get<string>('S3_REGION') || 'auto';
     const bucket = config.get<string>('S3_BUCKET');
@@ -31,8 +31,8 @@ export class UploadsService {
             forcePathStyle: Boolean(endpoint),
             credentials: {
               accessKeyId,
-              secretAccessKey
-            }
+              secretAccessKey,
+            },
           })
         : null;
   }
@@ -56,11 +56,7 @@ export class UploadsService {
     return endpoint;
   }
 
-  async createPresignedUpload(params: {
-    filename: string;
-    contentType: string;
-    folder?: string;
-  }) {
+  async createPresignedUpload(params: { filename: string; contentType: string; folder?: string }) {
     if (!this.client || !this.bucket) {
       throw new InternalServerErrorException('S3 credentials not configured');
     }
@@ -72,24 +68,24 @@ export class UploadsService {
     const command = new PutObjectCommand({
       Bucket: this.bucket,
       Key: key,
-      ContentType: params.contentType
+      ContentType: params.contentType,
     });
 
     const uploadUrl = await getSignedUrl(this.client, command, {
-      expiresIn: 600
+      expiresIn: 600,
     });
 
     const endpoint = this.config.get<string>('S3_ENDPOINT');
     const fallbackPublicUrl = this.publicUrl
       ? `${this.publicUrl.replace(/\/$/, '')}/${key}`
       : endpoint
-      ? `${endpoint}/${this.bucket}/${key}`
-      : null;
+        ? `${endpoint}/${this.bucket}/${key}`
+        : null;
 
     return {
       uploadUrl,
       key,
-      publicUrl: fallbackPublicUrl
+      publicUrl: fallbackPublicUrl,
     };
   }
 }

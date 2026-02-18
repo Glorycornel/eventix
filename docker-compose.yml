@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: eventix
       POSTGRES_DB: eventix
     ports:
-      - "5433:5432"
+      - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -15,7 +15,7 @@ services:
     image: redis:7
     container_name: eventix-redis
     ports:
-      - "6380:6379"
+      - '6380:6379'
     volumes:
       - redis_data:/data
 
@@ -45,7 +45,7 @@ services:
       S3_REGION: auto
       PORT: 3001
     ports:
-      - "3001:3001"
+      - '3001:3001'
     depends_on:
       - postgres
       - redis
@@ -61,7 +61,7 @@ services:
       INTERNAL_API_BASE_URL: http://api:3001
       PORT: 3000
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       - api
 

@@ -3,7 +3,7 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
-  NotFoundException
+  NotFoundException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
@@ -23,7 +23,7 @@ export class EventOwnerGuard implements CanActivate {
 
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
-      select: { organizerId: true }
+      select: { organizerId: true },
     });
 
     if (!event) {

@@ -13,7 +13,7 @@ export class UploadsController {
     return this.uploadsService.createPresignedUpload({
       filename: body.filename,
       contentType: body.contentType,
-      folder: body.folder
+      folder: body.folder,
     });
   }
 }
