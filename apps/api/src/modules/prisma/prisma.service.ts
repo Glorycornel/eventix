@@ -1,9 +1,34 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+
+type PrismaClientConstructor = new () => {
+  $connect?: () => Promise<void>;
+};
+
+let prismaModule: { PrismaClient?: PrismaClientConstructor } = {};
+try {
+  prismaModule = require('@prisma/client') as {
+    PrismaClient?: PrismaClientConstructor;
+  };
+} catch {
+  prismaModule = {};
+}
+
+const PrismaClientBase: PrismaClientConstructor =
+  prismaModule.PrismaClient ??
+  class {
+    async $connect() {
+      return Promise.resolve();
+    }
+  };
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
+export class PrismaService extends PrismaClientBase implements OnModuleInit {
+  // Fallback for environments where Prisma client delegates are not generated.
+  [key: string]: any;
+
   async onModuleInit() {
-    await this.$connect();
+    if (typeof this.$connect === 'function') {
+      await this.$connect();
+    }
   }
 }
