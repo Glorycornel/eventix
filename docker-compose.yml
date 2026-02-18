@@ -23,10 +23,14 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     environment:
       DATABASE_URL: postgresql://eventix:eventix@postgres:5432/eventix
       REDIS_URL: redis://redis:6379
       APP_URL: ${APP_URL}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}

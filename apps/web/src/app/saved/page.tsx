@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/api';
 import { AuthPrompt } from '../../components/AuthPrompt';
 import { useAuth } from '../../components/AuthProvider';
-import { loadSavedEventIds } from '../../lib/saved';
+import { loadSavedEventIds, subscribeSavedEventIds } from '../../lib/saved';
 import { formatDateRange } from '../../lib/format';
 
 type EventItem = {
@@ -22,7 +22,12 @@ export default function SavedEventsPage() {
   const { token } = useAuth();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [status, setStatus] = useState('Loading saved events...');
-  const savedIds = useMemo(() => loadSavedEventIds(), []);
+  const [savedIds, setSavedIds] = useState<string[]>(() => loadSavedEventIds());
+
+  useEffect(() => {
+    const unsubscribe = subscribeSavedEventIds(setSavedIds);
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (!token) {
@@ -37,11 +42,13 @@ export default function SavedEventsPage() {
       return;
     }
 
-    apiFetch<EventItem[]>('/events', { cache: 'no-store' })
+    apiFetch<EventItem[]>('/events/lookup', {
+      method: 'POST',
+      body: JSON.stringify({ ids: savedIds }),
+    })
       .then((data) => {
-        const saved = data.filter((event) => savedIds.includes(event.id));
-        setEvents(saved);
-        setStatus(saved.length ? '' : 'No saved events yet.');
+        setEvents(data);
+        setStatus(data.length ? '' : 'No saved events yet.');
       })
       .catch(() => {
         setEvents([]);

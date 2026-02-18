@@ -5,6 +5,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +24,11 @@ export class AuthController {
   @Post('resend')
   resend(@Body() body: ResendVerificationDto) {
     return this.authService.resendVerification(body.email);
+  }
+
+  @Post('verify-otp')
+  verifyOtp(@Body() body: VerifyOtpDto) {
+    return this.authService.verifyEmailOtp(body.email, body.otp);
   }
 
   @Get('verify')

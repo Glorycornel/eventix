@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { API_BASE } from '../lib/api';
 import { useAuth } from './AuthProvider';
 
@@ -22,6 +23,7 @@ export function AuthForm({
   compact = false,
 }: AuthFormProps) {
   const { setToken } = useAuth();
+  const router = useRouter();
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [status, setStatus] = useState('');
   const [verifyUrl, setVerifyUrl] = useState<string | null>(null);
@@ -86,10 +88,14 @@ export function AuthForm({
           onSuccess();
         }
       } else {
-        const data = (await response.json()) as { message?: string; token?: string };
-        setStatus(data.message || 'Check your email to confirm your account.');
-        if (data.token) {
-          setVerifyUrl(`/verify-email?token=${encodeURIComponent(data.token)}`);
+        const data = (await response.json()) as { message?: string; otp?: string };
+        const email = String(payload.email || '');
+        setStatus(data.message || 'Check your email for a verification code.');
+        const nextVerifyUrl = `/verify-email?email=${encodeURIComponent(email)}`;
+        setVerifyUrl(nextVerifyUrl);
+        router.push(nextVerifyUrl);
+        if (data.otp) {
+          setStatus(`Verification email failed in dev. Use code: ${data.otp}`);
         }
       }
     } catch (error) {
@@ -132,7 +138,10 @@ export function AuthForm({
       {helper ? <p className="mt-2 text-sm text-neutral-300">{helper}</p> : null}
       {verifyUrl ? (
         <p className="mt-2 text-sm text-emerald-200">
-          Dev link: <a className="underline" href={verifyUrl}>Verify email now</a>
+          Continue:{' '}
+          <a className="underline" href={verifyUrl}>
+            Enter verification code
+          </a>
         </p>
       ) : null}
 
@@ -234,7 +243,9 @@ export function AuthForm({
                 type="button"
                 onClick={() => setShowConfirm((value) => !value)}
                 className="text-neutral-300 transition hover:text-white"
-                aria-label={showConfirm ? 'Hide password confirmation' : 'Show password confirmation'}
+                aria-label={
+                  showConfirm ? 'Hide password confirmation' : 'Show password confirmation'
+                }
               >
                 {showConfirm ? (
                   <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">

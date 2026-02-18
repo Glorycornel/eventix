@@ -1,18 +1,7 @@
-import { Fraunces, Space_Grotesk } from 'next/font/google';
 import '../styles/globals.css';
 import { Preloader } from '../components/Preloader';
 import { AuthProvider } from '../components/AuthProvider';
 import { AuthModalProvider } from '../components/AuthModalProvider';
-
-const display = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-display',
-});
-
-const body = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-body',
-});
 
 export const metadata = {
   title: 'Eventix',
@@ -21,7 +10,15 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html
+      lang="en"
+      style={
+        {
+          '--font-display': "'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+          '--font-body': "'Trebuchet MS', 'Segoe UI', Tahoma, sans-serif",
+        } as React.CSSProperties
+      }
+    >
       <body className="bg-neutral-950 text-neutral-100">
         <AuthProvider>
           <AuthModalProvider>

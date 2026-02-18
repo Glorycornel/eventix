@@ -7,6 +7,8 @@ import { BannerUploadField } from '../../../../components/BannerUploadField';
 import { DateTimePicker } from '../../../../components/DateTimePicker';
 import { AuthPrompt } from '../../../../components/AuthPrompt';
 import { useAuth } from '../../../../components/AuthProvider';
+import { StyledDropdown } from '../../../../components/StyledDropdown';
+import { EVENT_CATEGORY_GROUPS } from '../../../../lib/categories';
 
 export default function NewEventPage() {
   const { token } = useAuth();
@@ -15,6 +17,11 @@ export default function NewEventPage() {
   const [startAt, setStartAt] = useState('');
   const [endAt, setEndAt] = useState('');
   const [formKey, setFormKey] = useState(0);
+  const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
+
+  const selectedCategory = EVENT_CATEGORY_GROUPS.find((group) => group.name === category);
+  const subcategoryOptions = selectedCategory?.items ?? [];
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -31,9 +38,15 @@ export default function NewEventPage() {
       description: String(form.get('description') || ''),
       venue: String(form.get('venue') || ''),
       city: String(form.get('city') || ''),
+      category: category || null,
+      subcategory: subcategory || null,
       startAt,
       endAt,
-      bannerUrl: bannerUrl || null
+      capacity: Number(form.get('capacity') || 0),
+      bannerUrl: bannerUrl || null,
+      refundAllowed: form.get('refundAllowed') === 'on',
+      refundWindowHours: Number(form.get('refundWindowHours') || 24),
+      refundFeePercent: Number(form.get('refundFeePercent') || 0),
     };
 
     try {
@@ -41,9 +54,9 @@ export default function NewEventPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -54,6 +67,8 @@ export default function NewEventPage() {
       setBannerUrl('');
       setStartAt('');
       setEndAt('');
+      setCategory('');
+      setSubcategory('');
       setFormKey((prev) => prev + 1);
     } catch (error) {
       const message =
@@ -75,11 +90,8 @@ export default function NewEventPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-10 px-6 py-16">
-      <Link
-        href="/org/events"
-        className="text-xs uppercase tracking-[0.3em] text-emerald-300"
-      >
-        Back to organizer
+      <Link href="/" className="text-xs uppercase tracking-[0.3em] text-emerald-300">
+        Back to events
       </Link>
 
       <header className="space-y-3">
@@ -126,6 +138,33 @@ export default function NewEventPage() {
             className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
           />
         </label>
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-2 text-sm">
+            Category
+            <StyledDropdown
+              value={category}
+              onChange={(value) => {
+                setCategory(value);
+                setSubcategory('');
+              }}
+              options={EVENT_CATEGORY_GROUPS.map((group) => ({
+                label: group.name,
+                value: group.name,
+              }))}
+              placeholder="Select category"
+            />
+          </label>
+          <label className="flex flex-col gap-2 text-sm">
+            Subcategory
+            <StyledDropdown
+              value={subcategory}
+              onChange={setSubcategory}
+              disabled={!category}
+              options={subcategoryOptions.map((item) => ({ label: item, value: item }))}
+              placeholder={category ? 'Select subcategory' : 'Choose category first'}
+            />
+          </label>
+        </div>
         <label className="flex flex-col gap-2 text-sm">
           Description
           <textarea
@@ -135,20 +174,53 @@ export default function NewEventPage() {
             className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
           />
         </label>
-        <div className="grid gap-4 md:grid-cols-2">
-          <DateTimePicker
-            label="Start time"
-            value={startAt}
-            onChange={setStartAt}
+        <label className="flex flex-col gap-2 text-sm">
+          Capacity
+          <input
+            name="capacity"
+            type="number"
+            min={1}
             required
+            className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
           />
+        </label>
+        <div className="grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              name="refundAllowed"
+              type="checkbox"
+              defaultChecked
+              className="h-4 w-4 rounded border-white/20 bg-white/10"
+            />
+            Allow refunds
+          </label>
+          <label className="flex flex-col gap-2 text-sm">
+            Refund window (hours)
+            <input
+              name="refundWindowHours"
+              type="number"
+              min={0}
+              defaultValue={24}
+              className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
+            />
+          </label>
+          <label className="flex flex-col gap-2 text-sm">
+            Refund fee (%)
+            <input
+              name="refundFeePercent"
+              type="number"
+              min={0}
+              max={100}
+              defaultValue={0}
+              className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
+            />
+          </label>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <DateTimePicker label="Start time" value={startAt} onChange={setStartAt} required />
           <DateTimePicker label="End time" value={endAt} onChange={setEndAt} required />
         </div>
-        <BannerUploadField
-          token={token}
-          value={bannerUrl}
-          onChange={setBannerUrl}
-        />
+        <BannerUploadField token={token} value={bannerUrl} onChange={setBannerUrl} />
         <button
           type="submit"
           className="mt-2 w-fit rounded-full border border-emerald-400/60 px-6 py-2 text-sm text-emerald-200 transition hover:border-emerald-200"

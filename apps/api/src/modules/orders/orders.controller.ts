@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OrderStatus } from '@prisma/client';
@@ -35,5 +35,12 @@ export class OrdersController {
     });
     const tickets = await this.ordersService.processPaidOrder(order.id);
     return { orderId: order.id, tickets };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('orders/:id/cancel')
+  cancelOrder(@Req() req: Request, @Param('id') id: string) {
+    const user = req.user as { id: string };
+    return this.ordersService.cancelOrder(user.id, id);
   }
 }

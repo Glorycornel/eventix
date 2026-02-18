@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { formatDateRange } from '../lib/format';
 import { resolvePublicAssetUrl } from '../lib/urls';
+import { EVENT_CATEGORY_GROUPS } from '../lib/categories';
 import { AuthLink } from './AuthLink';
 import { SavedToggleButton } from './SavedToggleButton';
 
@@ -12,10 +13,15 @@ export type EventItem = {
   title: string;
   description: string;
   city: string;
+  category?: string | null;
+  subcategory?: string | null;
   venue: string;
   startAt: string;
   endAt: string;
   bannerUrl: string | null;
+  capacity?: number | null;
+  ticketSoldCount?: number;
+  ticketsRemaining?: number | null;
 };
 
 type GeoStatus = 'idle' | 'loading' | 'error';
@@ -31,6 +37,11 @@ type DiscoverContentProps = {
 };
 
 const ALL_CITIES_LABEL = 'All cities';
+
+function toNeighborhoodLabel(venue: string) {
+  const [firstChunk] = venue.split(',');
+  return (firstChunk || venue).trim();
+}
 
 export function DiscoverContent({ events }: DiscoverContentProps) {
   const [locationCity, setLocationCity] = useState('');
@@ -53,33 +64,6 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
   const [eventType, setEventType] = useState('any');
   const [sortBy, setSortBy] = useState('relevance');
 
-  const neighborhoodOptions = [
-    'Soho',
-    'Shoreditch',
-    'Camden',
-    'Chelsea',
-    'Greenwich',
-    'Hackney',
-    'Notting Hill',
-    'Southbank',
-    'Islington',
-    'Kensington',
-    'Brixton',
-    'Canary Wharf',
-  ];
-
-  const categoryGroups = [
-    { name: 'Music', items: ['Latin', 'Pop', 'Cultural', 'Afro', 'Jazz', 'Electronic'] },
-    { name: 'Business', items: ['Career', 'Real Estate', 'Tech', 'Media', 'Finance'] },
-    { name: 'Fashion', items: ['Runway', 'Streetwear', 'Sustainable', 'Luxury'] },
-    { name: 'Hobbies', items: ['Gaming', 'Photography', 'Crafts', 'Writing'] },
-    { name: 'Health', items: ['Wellness', 'Yoga', 'Fitness', 'Mindfulness'] },
-    { name: 'Food & Drink', items: ['Tastings', 'Pop-ups', 'Nightlife', 'Dining'] },
-    { name: 'Performing & Visual Arts', items: ['Theatre', 'Dance', 'Exhibitions'] },
-    { name: 'Community', items: ['Meetups', 'Volunteering', 'Local Markets'] },
-    { name: 'Sports', items: ['Football', 'Basketball', 'Running', 'Cycling'] },
-  ];
-
   const hasFilters =
     dateFilter !== 'any' ||
     selectedNeighborhoods.length > 0 ||
@@ -99,17 +83,56 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
     );
   }, [locationCity, locationLabel]);
 
-  const filteredEvents = useMemo(() => {
+  const neighborhoodOptions = useMemo(() => {
     const normalized = locationCity.trim().toLowerCase();
     if (!normalized) {
-      return events;
+      return [] as string[];
     }
-    return events.filter((event) => event.city?.toLowerCase() === normalized);
+
+    return Array.from(
+      new Set(
+        events
+          .filter((event) => event.city?.toLowerCase() === normalized)
+          .map((event) => toNeighborhoodLabel(event.venue))
+          .filter(Boolean),
+      ),
+    ).sort((a, b) => a.localeCompare(b));
   }, [events, locationCity]);
+
+  useEffect(() => {
+    setSelectedNeighborhoods((prev) => prev.filter((value) => neighborhoodOptions.includes(value)));
+  }, [neighborhoodOptions]);
+
+  const filteredEvents = useMemo(() => {
+    const normalized = locationCity.trim().toLowerCase();
+    let pool = normalized
+      ? events.filter((event) => event.city?.toLowerCase() === normalized)
+      : events;
+
+    if (selectedNeighborhoods.length > 0) {
+      pool = pool.filter((event) =>
+        selectedNeighborhoods.includes(toNeighborhoodLabel(event.venue)),
+      );
+    }
+
+    if (selectedCategories.length > 0) {
+      pool = pool.filter((event) => {
+        if (event.subcategory && selectedCategories.includes(event.subcategory)) {
+          return true;
+        }
+        if (event.category && selectedCategories.includes(event.category)) {
+          return true;
+        }
+        return false;
+      });
+    }
+
+    return pool;
+  }, [events, locationCity, selectedNeighborhoods, selectedCategories]);
 
   const handleUseLocation = () => {
     if (!navigator.geolocation) {
-      setGeoStatus("error");
+      setGeoStatus('error');
       return;
     }
     setGeoStatus('loading');
@@ -117,9 +140,7 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          const response = await fetch(
-            `/api/geo/reverse?lat=${latitude}&lon=${longitude}`,
-          );
+          const response = await fetch(`/api/geo/reverse?lat=${latitude}&lon=${longitude}`);
           if (!response.ok) {
             throw new Error('Failed to resolve location');
           }
@@ -135,7 +156,7 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
           const state = address.state || address.region || address.county;
           const country = address.country;
           if (city) {
-            const label = [city, state, country].filter(Boolean).join(", ");
+            const label = [city, state, country].filter(Boolean).join(', ');
             setLocationCity(city);
             setLocationLabel(label);
             setInputValue(label);
@@ -154,10 +175,7 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
 
   useEffect(() => {
     const trimmed = inputValue.trim();
-    if (
-      trimmed.length < 2 ||
-      trimmed.toLowerCase() === ALL_CITIES_LABEL.toLowerCase()
-    ) {
+    if (trimmed.length < 2 || trimmed.toLowerCase() === ALL_CITIES_LABEL.toLowerCase()) {
       setSuggestions([]);
       setSuggestionStatus('idle');
       return;
@@ -167,9 +185,7 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
     setSuggestionStatus('loading');
     const timeout = window.setTimeout(async () => {
       try {
-        const response = await fetch(
-          `/api/geo/search?q=${encodeURIComponent(trimmed)}`,
-        );
+        const response = await fetch(`/api/geo/search?q=${encodeURIComponent(trimmed)}`);
         if (!response.ok) {
           throw new Error('Failed to fetch suggestions');
         }
@@ -196,7 +212,7 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
             if (!city) {
               return null;
             }
-            const label = [city, state, country].filter(Boolean).join(", ");
+            const label = [city, state, country].filter(Boolean).join(', ');
             return { city, label };
           })
           .filter((item): item is LocationSuggestion => Boolean(item));
@@ -232,8 +248,8 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
                 onClick={() => setFiltersOpen(true)}
                 className={`absolute right-1 flex h-10 w-10 items-center justify-center rounded-full border transition ${
                   hasFilters
-                    ? "border-emerald-300/60 bg-emerald-300/10 text-emerald-100"
-                    : "border-white/10 bg-white/5 text-white/70 hover:border-white/30 hover:text-white"
+                    ? 'border-emerald-300/60 bg-emerald-300/10 text-emerald-100'
+                    : 'border-white/10 bg-white/5 text-white/70 hover:border-white/30 hover:text-white'
                 }`}
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
@@ -252,7 +268,7 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
               onClick={() => setSearchOpen((prev) => !prev)}
               className="text-xs uppercase tracking-[0.3em] text-neutral-400 md:text-right"
             >
-              {searchOpen ? "Close" : "Explore"} search
+              {searchOpen ? 'Close' : 'Explore'} search
             </button>
           </div>
 
@@ -264,9 +280,7 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
                   <span className="rounded-full border border-white/10 px-3 py-1">
                     rooftop jazz
                   </span>
-                  <span className="rounded-full border border-white/10 px-3 py-1">
-                    tech meetup
-                  </span>
+                  <span className="rounded-full border border-white/10 px-3 py-1">tech meetup</span>
                   <span className="rounded-full border border-white/10 px-3 py-1">art walk</span>
                 </div>
               </div>
@@ -276,9 +290,7 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
                   <span className="rounded-full border border-white/10 px-3 py-1">
                     open air cinema
                   </span>
-                  <span className="rounded-full border border-white/10 px-3 py-1">
-                    food pop-up
-                  </span>
+                  <span className="rounded-full border border-white/10 px-3 py-1">food pop-up</span>
                   <span className="rounded-full border border-white/10 px-3 py-1">
                     latin nights
                   </span>
@@ -305,7 +317,14 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
                   stroke="currentColor"
                   strokeWidth="1.6"
                 />
-                <circle cx="12" cy="11" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+                <circle
+                  cx="12"
+                  cy="11"
+                  r="2.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                />
               </svg>
             </button>
             <div>
@@ -323,23 +342,23 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
             <input
               value={inputValue}
               onChange={(event) => setInputValue(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    const trimmed = inputValue.trim();
-                    if (!trimmed) {
-                      setLocationCity('');
-                      setLocationLabel(ALL_CITIES_LABEL);
-                      setInputValue('');
-                      setSuggestions([]);
-                      return;
-                    }
-                    setLocationCity(trimmed);
-                    setLocationLabel(trimmed);
-                    setInputValue(trimmed);
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  const trimmed = inputValue.trim();
+                  if (!trimmed) {
+                    setLocationCity('');
+                    setLocationLabel(ALL_CITIES_LABEL);
+                    setInputValue('');
                     setSuggestions([]);
+                    return;
                   }
-                }}
+                  setLocationCity(trimmed);
+                  setLocationLabel(trimmed);
+                  setInputValue(trimmed);
+                  setSuggestions([]);
+                }
+              }}
               placeholder="Start typing a city..."
               className="w-full rounded-full border border-white/10 bg-neutral-950/80 px-4 py-2 text-sm text-white/90"
             />
@@ -489,51 +508,69 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
               <div>
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold">Neighborhood</p>
-                  <button
-                    type="button"
-                    onClick={() => setNeighborhoodsExpanded((prev) => !prev)}
-                    className="text-xs uppercase tracking-[0.3em] text-neutral-400"
-                  >
-                  {neighborhoodsExpanded ? 'Show less' : 'Show all'}
-                </button>
-              </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {(neighborhoodsExpanded
-                    ? neighborhoodOptions
-                    : neighborhoodOptions.slice(0, 6)
-                  ).map((item) => (
-                    <label
-                      key={item}
-                      className="flex cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70 transition hover:border-white/30"
+                  {locationCity ? (
+                    <button
+                      type="button"
+                      onClick={() => setNeighborhoodsExpanded((prev) => !prev)}
+                      className="text-xs uppercase tracking-[0.3em] text-neutral-400"
                     >
-                      <input
-                        type="checkbox"
-                        checked={selectedNeighborhoods.includes(item)}
-                        onChange={(event) => {
-                          setSelectedNeighborhoods((prev) =>
-                            event.target.checked
-                              ? [...prev, item]
-                              : prev.filter((value) => value !== item),
-                          );
-                        }}
-                        className="h-4 w-4 accent-emerald-300"
-                      />
-                      {item}
-                    </label>
-                  ))}
+                      {neighborhoodsExpanded ? 'Show less' : 'Show all'}
+                    </button>
+                  ) : null}
                 </div>
+                {!locationCity ? (
+                  <p className="mt-3 text-xs text-neutral-400">
+                    Choose a specific city to see neighborhoods.
+                  </p>
+                ) : neighborhoodOptions.length === 0 ? (
+                  <p className="mt-3 text-xs text-neutral-400">
+                    No neighborhoods found for the selected city yet.
+                  </p>
+                ) : (
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {(neighborhoodsExpanded
+                      ? neighborhoodOptions
+                      : neighborhoodOptions.slice(0, 6)
+                    ).map((item) => (
+                      <label
+                        key={item}
+                        className="flex cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70 transition hover:border-white/30"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedNeighborhoods.includes(item)}
+                          onChange={(event) => {
+                            setSelectedNeighborhoods((prev) =>
+                              event.target.checked
+                                ? [...prev, item]
+                                : prev.filter((value) => value !== item),
+                            );
+                          }}
+                          className="h-4 w-4 accent-emerald-300"
+                        />
+                        {item}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-neutral-500">
+                  Neighborhoods are based on venues in the selected city.
+                </p>
               </div>
 
               <div>
                 <p className="text-sm font-semibold">Category</p>
                 <div className="mt-3 grid gap-3">
-                  {categoryGroups.map((group) => (
+                  {EVENT_CATEGORY_GROUPS.map((group) => (
                     <details
                       key={group.name}
                       className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
                     >
-                      <summary className="cursor-pointer text-sm font-medium text-white/80">
-                        {group.name}
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-white/80 [&::-webkit-details-marker]:hidden">
+                        <span>{group.name}</span>
+                        <span className="text-xs text-neutral-500" aria-hidden="true">
+                          ▾
+                        </span>
                       </summary>
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         {group.items.map((item) => (
@@ -578,12 +615,15 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p className="text-sm font-semibold">Event type</p>
                   <div className="mt-3 grid gap-2">
-                  {[
+                    {[
                       { value: 'any', label: 'Any' },
                       { value: 'online', label: 'Online / Virtual' },
                       { value: 'physical', label: 'Physical' },
                     ].map((option) => (
-                      <label key={option.value} className="flex items-center gap-2 text-sm text-white/70">
+                      <label
+                        key={option.value}
+                        className="flex items-center gap-2 text-sm text-white/70"
+                      >
                         <input
                           type="radio"
                           name="eventType"
@@ -675,6 +715,7 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
         ) : (
           filteredEvents.map((event) => {
             const bannerUrl = resolvePublicAssetUrl(event.bannerUrl);
+            const isPastEvent = new Date(event.startAt).getTime() <= Date.now();
 
             return (
               <div
@@ -701,11 +742,14 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
                     </p>
                     <SavedToggleButton eventId={event.id} />
                   </div>
+                  {isPastEvent ? (
+                    <p className="text-[0.65rem] uppercase tracking-[0.3em] text-amber-300">
+                      Booking closed
+                    </p>
+                  ) : null}
                   <Link href={`/events/${event.id}`} className="space-y-2">
                     <h2 className="text-2xl font-semibold">{event.title}</h2>
-                    <p className="text-sm text-neutral-300 line-clamp-2">
-                      {event.description}
-                    </p>
+                    <p className="text-sm text-neutral-300 line-clamp-2">{event.description}</p>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
                       <span>{event.venue}</span>
                       <span>-</span>

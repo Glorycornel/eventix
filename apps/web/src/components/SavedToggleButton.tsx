@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from './AuthProvider';
 import { useAuthModal } from './AuthModalProvider';
-import { loadSavedEventIds, persistSavedEventIds } from '../lib/saved';
+import { loadSavedEventIds, persistSavedEventIds, subscribeSavedEventIds } from '../lib/saved';
 
 type SavedToggleButtonProps = {
   eventId: string;
@@ -17,6 +17,7 @@ export function SavedToggleButton({ eventId, className }: SavedToggleButtonProps
 
   useEffect(() => {
     setSavedIds(loadSavedEventIds());
+    return subscribeSavedEventIds(setSavedIds);
   }, []);
 
   const isSaved = savedIds.includes(eventId);
@@ -26,9 +27,7 @@ export function SavedToggleButton({ eventId, className }: SavedToggleButtonProps
       openAuthModal('Sign in to save events for later.', 'login');
       return;
     }
-    const updated = isSaved
-      ? savedIds.filter((id) => id !== eventId)
-      : [...savedIds, eventId];
+    const updated = isSaved ? savedIds.filter((id) => id !== eventId) : [...savedIds, eventId];
     setSavedIds(updated);
     persistSavedEventIds(updated);
   };

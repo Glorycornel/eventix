@@ -54,10 +54,17 @@ model Event {
   description        String
   venue              String
   city               String
+  category           String?
+  subcategory        String?
   startAt            DateTime
   endAt              DateTime
   bannerUrl          String?
+  capacity           Int?
+  refundAllowed      Boolean     @default(true)
+  refundWindowHours  Int         @default(24)
+  refundFeePercent   Int         @default(0)
   status             EventStatus @default(DRAFT)
+  archivedAt         DateTime?
   submittedAt        DateTime?
   reviewedAt         DateTime?
   reviewedByUserId   String?
@@ -95,6 +102,12 @@ model Order {
   totalAmount     Int
   currency        String
   stripeSessionId String?     @unique
+  stripePaymentIntentId String?
+  stripeRefundId  String?
+  refundAmount    Int?
+  refundFeeAmount Int?
+  canceledAt      DateTime?
+  refundedAt      DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -121,6 +134,7 @@ model Ticket {
   ticketTypeId      String
   token             String   @unique
   checkedInAt       DateTime?
+  canceledAt        DateTime?
   checkedInByUserId String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

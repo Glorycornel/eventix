@@ -1,4 +1,15 @@
-import { IsDateString, IsOptional, IsString, IsUrl, Matches, ValidateIf } from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Matches,
+  Min,
+  Max,
+  IsBoolean,
+  ValidateIf,
+} from 'class-validator';
 
 export class UpdateEventDto {
   @IsOptional()
@@ -18,12 +29,40 @@ export class UpdateEventDto {
   city?: string;
 
   @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  subcategory?: string;
+
+  @IsOptional()
   @IsDateString()
   startAt?: string;
 
   @IsOptional()
   @IsDateString()
   endAt?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  capacity?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  refundAllowed?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  refundWindowHours?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  refundFeePercent?: number;
 
   @IsOptional()
   @IsString()

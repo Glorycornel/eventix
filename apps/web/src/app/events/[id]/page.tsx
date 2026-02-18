@@ -4,6 +4,7 @@ import { EventBookingPanel } from '../../../components/EventBookingPanel';
 import { SavedToggleButton } from '../../../components/SavedToggleButton';
 import { apiFetch } from '../../../lib/api';
 import { formatDateRange } from '../../../lib/format';
+import { formatMoney } from '../../../lib/money';
 import { resolvePublicAssetUrl } from '../../../lib/urls';
 
 type EventDetail = {
@@ -11,10 +12,15 @@ type EventDetail = {
   title: string;
   description: string;
   city: string;
+  category?: string | null;
+  subcategory?: string | null;
   venue: string;
   startAt: string;
   endAt: string;
   bannerUrl: string | null;
+  refundAllowed: boolean;
+  refundWindowHours: number;
+  refundFeePercent: number;
 };
 
 type TicketType = {
@@ -26,22 +32,17 @@ type TicketType = {
   soldCount: number;
 };
 
-export default async function EventDetailPage({
-  params
-}: {
-  params: { id: string };
-}) {
+export default async function EventDetailPage({ params }: { params: { id: string } }) {
   const event = await apiFetch<EventDetail>(`/events/${params.id}`, {
-    cache: 'no-store'
+    cache: 'no-store',
   });
   const bannerUrl = resolvePublicAssetUrl(event.bannerUrl);
   let ticketTypes: TicketType[] = [];
 
   try {
-    ticketTypes = await apiFetch<TicketType[]>(
-      `/events/${params.id}/ticket-types`,
-      { cache: 'no-store' }
-    );
+    ticketTypes = await apiFetch<TicketType[]>(`/events/${params.id}/ticket-types`, {
+      cache: 'no-store',
+    });
   } catch {
     ticketTypes = [];
   }
@@ -49,10 +50,7 @@ export default async function EventDetailPage({
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-10 px-6 py-16">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          href="/"
-          className="text-xs uppercase tracking-[0.3em] text-emerald-300"
-        >
+        <Link href="/" className="text-xs uppercase tracking-[0.3em] text-emerald-300">
           Back to events
         </Link>
         <SavedToggleButton eventId={event.id} />
@@ -60,12 +58,7 @@ export default async function EventDetailPage({
       <section className="rounded-3xl border border-white/10 bg-white/5 p-8">
         {bannerUrl ? (
           <div className="mb-6 overflow-hidden rounded-2xl border border-white/10">
-            <img
-              src={bannerUrl}
-              alt=""
-              className="h-56 w-full object-cover"
-              loading="lazy"
-            />
+            <img src={bannerUrl} alt="" className="h-56 w-full object-cover" loading="lazy" />
           </div>
         ) : null}
         <h1 className="text-4xl font-semibold">{event.title}</h1>
@@ -74,35 +67,39 @@ export default async function EventDetailPage({
           <span>{event.venue}</span>
           <span>{event.city}</span>
           <span>{formatDateRange(event.startAt, event.endAt)}</span>
+          {event.category ? <span>{event.category}</span> : null}
+          {event.subcategory ? <span>{event.subcategory}</span> : null}
         </div>
       </section>
 
       <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-8">
         <div>
           <h2 className="text-2xl font-semibold">Ticket types</h2>
-          <p className="text-sm text-neutral-400">
-            Pricing and capacity for this event.
-          </p>
+          <p className="text-sm text-neutral-400">Pricing and capacity for this event.</p>
         </div>
         {ticketTypes.length === 0 ? (
           <p className="text-sm text-neutral-400">No ticket types yet.</p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {ticketTypes.map((ticket) => (
-              <div
-                key={ticket.id}
-                className="rounded-2xl border border-white/10 bg-white/5 p-5"
-              >
+              <div key={ticket.id} className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <h3 className="text-xl font-semibold">{ticket.name}</h3>
                 <p className="mt-2 text-sm text-neutral-300">
-                  {ticket.currency} {ticket.price} - {ticket.capacity} capacity
+                  {formatMoney(ticket.price, ticket.currency)} - {ticket.capacity} capacity
                 </p>
               </div>
             ))}
           </div>
         )}
       </section>
-      <EventBookingPanel eventId={event.id} ticketTypes={ticketTypes} />
+      <EventBookingPanel
+        eventId={event.id}
+        ticketTypes={ticketTypes}
+        eventStartAt={event.startAt}
+        refundAllowed={event.refundAllowed}
+        refundWindowHours={event.refundWindowHours}
+        refundFeePercent={event.refundFeePercent}
+      />
       <EventOwnerPanel eventId={params.id} />
     </main>
   );

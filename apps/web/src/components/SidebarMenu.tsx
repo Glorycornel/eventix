@@ -66,6 +66,30 @@ const navItems = [
     ),
   },
   {
+    key: 'manage-events',
+    label: 'My events',
+    href: '/org/events',
+    requiresAuth: true,
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+        <path
+          d="M6 4.5h12A1.5 1.5 0 0 1 19.5 6v12A1.5 1.5 0 0 1 18 19.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M8 9h8M8 13h5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+  {
     key: 'account',
     label: 'Account',
     href: '/me',
@@ -131,9 +155,7 @@ export function SidebarMenu({ buttonClassName = '' }: { buttonClassName?: string
         }`}
       >
         <div className="flex items-center justify-between">
-          <div className="text-lg font-semibold tracking-[0.2em] uppercase text-white/80">
-            Menu
-          </div>
+          <div className="text-lg font-semibold tracking-[0.2em] uppercase text-white/80">Menu</div>
           <button
             type="button"
             aria-label="Close menu"
@@ -195,9 +217,7 @@ export function SidebarMenu({ buttonClassName = '' }: { buttonClassName?: string
               Sign out
             </button>
           ) : null}
-          <div className="text-xs uppercase tracking-[0.3em] text-white/40">
-            Eventix
-          </div>
+          <div className="text-xs uppercase tracking-[0.3em] text-white/40">Eventix</div>
         </div>
       </aside>
     </>

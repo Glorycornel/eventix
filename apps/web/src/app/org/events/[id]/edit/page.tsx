@@ -7,17 +7,22 @@ import { BannerUploadField } from '../../../../../components/BannerUploadField';
 import { DateTimePicker } from '../../../../../components/DateTimePicker';
 import { AuthPrompt } from '../../../../../components/AuthPrompt';
 import { useAuth } from '../../../../../components/AuthProvider';
+import { StyledDropdown } from '../../../../../components/StyledDropdown';
+import { EVENT_CATEGORY_GROUPS } from '../../../../../lib/categories';
 
 type EventDetail = {
   id: string;
   title: string;
   description: string;
   city: string;
+  category: string | null;
+  subcategory: string | null;
   venue: string;
   startAt: string;
   endAt: string;
   bannerUrl: string | null;
   status: string;
+  capacity: number | null;
 };
 
 export default function EditEventPage({ params }: { params: { id: string } }) {
@@ -27,6 +32,11 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
   const [bannerUrl, setBannerUrl] = useState('');
   const [startAt, setStartAt] = useState('');
   const [endAt, setEndAt] = useState('');
+  const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
+
+  const selectedCategory = EVENT_CATEGORY_GROUPS.find((group) => group.name === category);
+  const subcategoryOptions = selectedCategory?.items ?? [];
 
   useEffect(() => {
     if (!token) {
@@ -45,6 +55,8 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
         setBannerUrl(data.bannerUrl || '');
         setStartAt(data.startAt || '');
         setEndAt(data.endAt || '');
+        setCategory(data.category || '');
+        setSubcategory(data.subcategory || '');
         setStatus('');
       })
       .catch(() => {
@@ -71,8 +83,11 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
       description: String(form.get('description') || ''),
       venue: String(form.get('venue') || ''),
       city: String(form.get('city') || ''),
+      category: category || null,
+      subcategory: subcategory || null,
       startAt,
       endAt,
+      capacity: Number(form.get('capacity') || 0),
       bannerUrl: bannerUrl || null,
     };
 
@@ -96,6 +111,8 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
       setBannerUrl(updated.bannerUrl || '');
       setStartAt(updated.startAt || '');
       setEndAt(updated.endAt || '');
+      setCategory(updated.category || '');
+      setSubcategory(updated.subcategory || '');
       setStatus('Event updated.');
     } catch {
       setStatus('Unable to save changes.');
@@ -113,10 +130,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-10 px-6 py-16">
-      <Link
-        href="/org/events"
-        className="text-xs uppercase tracking-[0.3em] text-emerald-300"
-      >
+      <Link href="/org/events" className="text-xs uppercase tracking-[0.3em] text-emerald-300">
         Back to organizer
       </Link>
 
@@ -167,6 +181,33 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
             className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
           />
         </label>
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-2 text-sm">
+            Category
+            <StyledDropdown
+              value={category}
+              onChange={(value) => {
+                setCategory(value);
+                setSubcategory('');
+              }}
+              options={EVENT_CATEGORY_GROUPS.map((group) => ({
+                label: group.name,
+                value: group.name,
+              }))}
+              placeholder="Select category"
+            />
+          </label>
+          <label className="flex flex-col gap-2 text-sm">
+            Subcategory
+            <StyledDropdown
+              value={subcategory}
+              onChange={setSubcategory}
+              disabled={!category}
+              options={subcategoryOptions.map((item) => ({ label: item, value: item }))}
+              placeholder={category ? 'Select subcategory' : 'Choose category first'}
+            />
+          </label>
+        </div>
         <label className="flex flex-col gap-2 text-sm">
           Description
           <textarea
@@ -177,19 +218,20 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
             className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
           />
         </label>
+        <label className="flex flex-col gap-2 text-sm">
+          Capacity
+          <input
+            name="capacity"
+            type="number"
+            min={1}
+            required
+            defaultValue={eventData?.capacity ?? ''}
+            className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
+          />
+        </label>
         <div className="grid gap-4 md:grid-cols-2">
-          <DateTimePicker
-            label="Start time"
-            value={startAt}
-            onChange={setStartAt}
-            required
-          />
-          <DateTimePicker
-            label="End time"
-            value={endAt}
-            onChange={setEndAt}
-            required
-          />
+          <DateTimePicker label="Start time" value={startAt} onChange={setStartAt} required />
+          <DateTimePicker label="End time" value={endAt} onChange={setEndAt} required />
         </div>
         <BannerUploadField token={token} value={bannerUrl} onChange={setBannerUrl} />
         <button

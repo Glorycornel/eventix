@@ -38,36 +38,36 @@ export class AuthService {
       },
     });
 
-    const token = await this.verificationService.createToken(user.id);
-    const appUrl = this.configService.get<string>('APP_URL') || 'http://localhost:3000';
-    const verifyUrl = `${appUrl}/verify-email?token=${token}`;
+    const otp = await this.verificationService.createOtp(user.email, user.id);
+    const otpTtlMinutes = Math.ceil(this.verificationService.getOtpTtlSeconds() / 60);
 
     try {
       await this.mailService.send({
         to: user.email,
-        subject: 'Confirm your Eventix account',
-        text: `Hi ${user.displayName}, confirm your email by visiting: ${verifyUrl}`,
+        subject: 'Your Eventix verification code',
+        text: `Hi ${user.displayName}, your Eventix verification code is ${otp}. It expires in ${otpTtlMinutes} minutes.`,
         html: `
           <p>Hi ${user.displayName},</p>
-          <p>Please confirm your email to activate your Eventix account.</p>
-          <p><a href="${verifyUrl}">Confirm my email</a></p>
+          <p>Please enter this code to verify your Eventix account:</p>
+          <p style="font-size:24px;font-weight:700;letter-spacing:0.3em;">${otp}</p>
+          <p>This code expires in ${otpTtlMinutes} minutes.</p>
           <p>If you did not request this, you can ignore this email.</p>
         `,
       });
     } catch (error) {
       if (this.configService.get<string>('NODE_ENV') !== 'production') {
         return {
-          message: 'Verification email failed in dev. Use the token to verify locally.',
-          token,
+          message: 'Verification email failed in dev. Use the OTP to verify locally.',
+          otp,
         };
       }
-      await this.verificationService.consumeToken(token);
+      await this.verificationService.deleteOtp(user.email);
       await this.prisma.user.delete({ where: { id: user.id } });
       throw error;
     }
 
     return {
-      message: 'Verification email sent. Please check your inbox to continue.',
+      message: 'Verification code sent. Please check your inbox to continue.',
     };
   }
 
@@ -99,36 +99,59 @@ export class AuthService {
     });
 
     if (!user || user.emailVerified) {
-      return { message: 'If an account exists, a verification email has been sent.' };
+      return { message: 'If an account exists, a verification code has been sent.' };
     }
 
-    const token = await this.verificationService.createToken(user.id);
-    const appUrl = this.configService.get<string>('APP_URL') || 'http://localhost:3000';
-    const verifyUrl = `${appUrl}/verify-email?token=${token}`;
+    const otp = await this.verificationService.createOtp(user.email, user.id);
+    const otpTtlMinutes = Math.ceil(this.verificationService.getOtpTtlSeconds() / 60);
 
     try {
       await this.mailService.send({
         to: user.email,
-        subject: 'Confirm your Eventix account',
-        text: `Hi ${user.displayName}, confirm your email by visiting: ${verifyUrl}`,
+        subject: 'Your Eventix verification code',
+        text: `Hi ${user.displayName}, your Eventix verification code is ${otp}. It expires in ${otpTtlMinutes} minutes.`,
         html: `
           <p>Hi ${user.displayName},</p>
-          <p>Please confirm your email to activate your Eventix account.</p>
-          <p><a href="${verifyUrl}">Confirm my email</a></p>
+          <p>Please enter this code to verify your Eventix account:</p>
+          <p style="font-size:24px;font-weight:700;letter-spacing:0.3em;">${otp}</p>
+          <p>This code expires in ${otpTtlMinutes} minutes.</p>
           <p>If you did not request this, you can ignore this email.</p>
         `,
       });
     } catch (error) {
       if (this.configService.get<string>('NODE_ENV') !== 'production') {
         return {
-          message: 'Verification email failed in dev. Use the token to verify locally.',
-          token,
+          message: 'Verification email failed in dev. Use the OTP to verify locally.',
+          otp,
         };
       }
       throw error;
     }
 
-    return { message: 'Verification email sent. Please check your inbox to continue.' };
+    return { message: 'Verification code sent. Please check your inbox to continue.' };
+  }
+
+  async verifyEmailOtp(email: string, otp: string) {
+    const userId = await this.verificationService.consumeOtp(email, otp);
+    if (!userId) {
+      throw new BadRequestException('Verification code is invalid or expired');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    });
+
+    if (!user || user.email.toLowerCase() !== email.trim().toLowerCase()) {
+      throw new BadRequestException('Verification code is invalid or expired');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { emailVerified: true, emailVerifiedAt: new Date() },
+    });
+
+    return { message: 'Email verified. You can now sign in.' };
   }
 
   async getMe(userId: string) {

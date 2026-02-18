@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { EventOwnerGuard } from './event-owner.guard';
@@ -15,7 +26,7 @@ export class EventsController {
     @Query('search') search?: string,
     @Query('city') city?: string,
     @Query('from') from?: string,
-    @Query('to') to?: string
+    @Query('to') to?: string,
   ) {
     return this.eventsService.listPublic({ search, city, from, to });
   }
@@ -55,5 +66,28 @@ export class EventsController {
   @UseGuards(JwtAuthGuard, EventOwnerGuard)
   publish(@Param('id') id: string) {
     return this.eventsService.publish(id);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, EventOwnerGuard)
+  remove(@Param('id') id: string) {
+    return this.eventsService.remove(id);
+  }
+
+  @Post(':id/archive')
+  @UseGuards(JwtAuthGuard, EventOwnerGuard)
+  archive(@Param('id') id: string) {
+    return this.eventsService.archive(id);
+  }
+
+  @Post(':id/unarchive')
+  @UseGuards(JwtAuthGuard, EventOwnerGuard)
+  unarchive(@Param('id') id: string) {
+    return this.eventsService.unarchive(id);
+  }
+
+  @Post('lookup')
+  lookup(@Body() body: { ids?: string[] }) {
+    return this.eventsService.lookup(body.ids ?? []);
   }
 }

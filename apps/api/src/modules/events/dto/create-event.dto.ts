@@ -4,6 +4,10 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  IsInt,
+  Min,
+  Max,
+  IsBoolean,
   Matches,
   ValidateIf,
 } from 'class-validator';
@@ -25,11 +29,38 @@ export class CreateEventDto {
   @IsNotEmpty()
   city!: string;
 
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  subcategory?: string;
+
   @IsDateString()
   startAt!: string;
 
   @IsDateString()
   endAt!: string;
+
+  @IsInt()
+  @Min(1)
+  capacity!: number;
+
+  @IsOptional()
+  @IsBoolean()
+  refundAllowed?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  refundWindowHours?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  refundFeePercent?: number;
 
   @IsOptional()
   @IsString()
