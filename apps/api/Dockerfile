@@ -23,5 +23,6 @@ ENV NODE_ENV=production
 COPY --from=builder /app /app
 
 WORKDIR /app/apps/api
+RUN chmod +x start.sh
 EXPOSE 3001
-CMD ["node", "dist/main.js"]
+CMD ["./start.sh"]
