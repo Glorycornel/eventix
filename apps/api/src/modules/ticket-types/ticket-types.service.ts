@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { EventStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventStatus } from '../prisma/prisma-fallback.types';
 import { CreateTicketTypeDto } from './dto/create-ticket-type.dto';
 import { UpdateTicketTypeDto } from './dto/update-ticket-type.dto';
 

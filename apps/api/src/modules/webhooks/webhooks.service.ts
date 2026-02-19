@@ -4,11 +4,11 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, WebhookProvider } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import Stripe from 'stripe';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { WebhookProvider } from '../prisma/prisma-fallback.types';
 import { OrdersService } from '../orders/orders.service';
 
 @Injectable()

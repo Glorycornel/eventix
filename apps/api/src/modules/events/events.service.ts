@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { EventStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventStatus } from '../prisma/prisma-fallback.types';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 
@@ -13,7 +13,7 @@ export class EventsService {
     const now = new Date();
     const fromDate = from ? new Date(from) : null;
     const startFrom = fromDate && fromDate > now ? fromDate : now;
-    const events = await this.prisma.event.findMany({
+    const events = (await this.prisma.event.findMany({
       where: {
         status: EventStatus.APPROVED,
         archivedAt: null,
@@ -33,11 +33,11 @@ export class EventsService {
       include: {
         ticketTypes: { select: { soldCount: true } },
       },
-    });
+    })) as any[];
 
     return events.map((event) => {
       const ticketSoldCount = event.ticketTypes.reduce(
-        (sum, ticketType) => sum + ticketType.soldCount,
+        (sum: number, ticketType: { soldCount: number }) => sum + ticketType.soldCount,
         0,
       );
       const ticketsRemaining =
@@ -67,18 +67,18 @@ export class EventsService {
   }
 
   async listMine(organizerId: string) {
-    const events = await this.prisma.event.findMany({
+    const events = (await this.prisma.event.findMany({
       where: { organizerId },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { orders: true } },
         ticketTypes: { select: { soldCount: true } },
       },
-    });
+    })) as any[];
 
     return events.map((event) => {
       const ticketSoldCount = event.ticketTypes.reduce(
-        (sum, ticketType) => sum + ticketType.soldCount,
+        (sum: number, ticketType: { soldCount: number }) => sum + ticketType.soldCount,
         0,
       );
       const ticketsRemaining =
@@ -201,7 +201,7 @@ export class EventsService {
       return [];
     }
 
-    const events = await this.prisma.event.findMany({
+    const events = (await this.prisma.event.findMany({
       where: {
         id: { in: ids },
         status: EventStatus.APPROVED,
@@ -209,11 +209,11 @@ export class EventsService {
       include: {
         ticketTypes: { select: { soldCount: true } },
       },
-    });
+    })) as any[];
 
     return events.map((event) => {
       const ticketSoldCount = event.ticketTypes.reduce(
-        (sum, ticketType) => sum + ticketType.soldCount,
+        (sum: number, ticketType: { soldCount: number }) => sum + ticketType.soldCount,
         0,
       );
       const ticketsRemaining =

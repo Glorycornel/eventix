@@ -6,10 +6,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EventStatus, OrderStatus, Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import Stripe from 'stripe';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventStatus, OrderStatus } from '../prisma/prisma-fallback.types';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderItemDto } from './dto/order-item.dto';
 
@@ -45,7 +45,7 @@ export class OrdersService {
   async createOrderWithItems(options: {
     userId: string;
     dto: CreateOrderDto;
-    status?: OrderStatus;
+    status?: string;
     stripeSessionId?: string;
   }) {
     if (!options.dto.items?.length) {
@@ -111,7 +111,7 @@ export class OrdersService {
 
     if (typeof eventCapacity.capacity === 'number') {
       const currentSold = eventCapacity.ticketTypes.reduce(
-        (sum, ticketType) => sum + ticketType.soldCount,
+        (sum: number, ticketType: { soldCount: number }) => sum + ticketType.soldCount,
         0,
       );
       const requested = options.dto.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -163,7 +163,7 @@ export class OrdersService {
   }
 
   async processPaidOrder(orderId: string) {
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return this.prisma.$transaction(async (tx: any) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
         include: { items: true, tickets: true },
@@ -201,7 +201,7 @@ export class OrdersService {
 
       if (typeof event.capacity === 'number') {
         const currentSold = event.ticketTypes.reduce(
-          (sum, ticketType) => sum + ticketType.soldCount,
+          (sum: number, ticketType: { soldCount: number }) => sum + ticketType.soldCount,
           0,
         );
         const requested = Array.from(ticketCounts.values()).reduce(
@@ -387,7 +387,7 @@ export class OrdersService {
       throw new BadRequestException('Event has already started');
     }
 
-    if (order.tickets.some((ticket) => ticket.checkedInAt)) {
+    if (order.tickets.some((ticket: { checkedInAt: Date | null }) => ticket.checkedInAt)) {
       throw new BadRequestException('Checked-in tickets cannot be canceled');
     }
 
@@ -419,7 +419,7 @@ export class OrdersService {
     }
 
     const ticketCounts = this.groupItems(order.items);
-    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    await this.prisma.$transaction(async (tx: any) => {
       for (const [ticketTypeId, quantity] of ticketCounts) {
         await tx.ticketType.updateMany({
           where: { id: ticketTypeId, soldCount: { gte: quantity } },
