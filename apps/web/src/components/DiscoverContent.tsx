@@ -7,6 +7,7 @@ import { resolvePublicAssetUrl } from '../lib/urls';
 import { EVENT_CATEGORY_GROUPS } from '../lib/categories';
 import { AuthLink } from './AuthLink';
 import { SavedToggleButton } from './SavedToggleButton';
+import { useAuth } from './AuthProvider';
 
 export type EventItem = {
   id: string;
@@ -44,6 +45,7 @@ function toNeighborhoodLabel(venue: string) {
 }
 
 export function DiscoverContent({ events }: DiscoverContentProps) {
+  const { token } = useAuth();
   const [locationCity, setLocationCity] = useState('');
   const [locationLabel, setLocationLabel] = useState(ALL_CITIES_LABEL);
   const [inputValue, setInputValue] = useState('');
@@ -695,7 +697,9 @@ export function DiscoverContent({ events }: DiscoverContentProps) {
           <p className="text-xs uppercase tracking-[0.3em] text-emerald-300">Ticket access</p>
           <h2 className="text-2xl font-semibold">Keep your tickets close</h2>
           <p className="text-sm text-neutral-300">
-            Sign in to view your booked tickets and their QR codes anytime.
+            {token
+              ? 'View your booked tickets and their QR codes anytime.'
+              : 'Sign in to view your booked tickets and their QR codes anytime.'}
           </p>
           <AuthLink
             href="/me/tickets"

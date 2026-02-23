@@ -43,6 +43,7 @@ services:
       S3_ENDPOINT: https://ce9b9f6a606b3c8a285e512301594761.r2.cloudflarestorage.com
       S3_PUBLIC_URL: ${S3_PUBLIC_URL}
       S3_REGION: auto
+      PRISMA_SEED_ON_BOOT: ${PRISMA_SEED_ON_BOOT:-false}
       PORT: 3001
     ports:
       - '3001:3001'
