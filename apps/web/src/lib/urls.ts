@@ -3,6 +3,11 @@ export function resolvePublicAssetUrl(value?: string | null) {
     return null;
   }
 
+  // Preserve local app assets (e.g. /images/eventix_background.png).
+  if (value.startsWith('/')) {
+    return value;
+  }
+
   try {
     return new URL(value).toString();
   } catch {
